@@ -10,12 +10,16 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.6.1",
+    "@supabase/supabase-js": "^2.52.1",
+    "bcryptjs": "^3.0.2",
     "framer-motion": "^12.23.6",
     "geist": "^1.4.2",
+    "jsonwebtoken": "^9.0.2",
     "next": "^15.4.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "stripe": "^18.3.0"
+    "stripe": "^18.3.0",
+    "zod": "^4.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
