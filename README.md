@@ -34,3 +34,32 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## API & Backend Usage
+
+This project uses Next.js API routes for backend functionality. You can find the API endpoints in the `src/app/api/` directory. Each subfolder (e.g., `bolt`, `shipping`, `stripe`) contains a `route.ts` file that defines the backend logic for that endpoint.
+
+### How to Use the Backend
+
+- **Development:**
+
+  - Start the development server with `npm run dev` (or your preferred package manager).
+  - API routes will be available at `http://localhost:3000/api/<route>` (e.g., `/api/bolt`, `/api/shipping`, `/api/stripe`).
+  - You can make HTTP requests to these endpoints from your frontend code or external tools like Postman/Insomnia.
+
+- **Adding New Endpoints:**
+
+  - Create a new folder inside `src/app/api/` and add a `route.ts` file.
+  - Export a handler function using Next.js API route conventions.
+  - The endpoint will be available at `/api/<your-folder>`.
+
+- **Example Request:**
+  ```js
+  fetch("/api/bolt", {
+    method: "POST",
+    body: JSON.stringify({ key: "value" }),
+    headers: { "Content-Type": "application/json" },
+  });
+  ```
+
+For more details, see the [Next.js API routes documentation](https://nextjs.org/docs/app/building-your-application/routing/api-routes).
