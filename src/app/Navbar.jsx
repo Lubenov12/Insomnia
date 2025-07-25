@@ -19,11 +19,17 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Left: Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <img
-              src="/img/logo_white.png"
-              alt="Logo"
-              className="h-12 w-12 mr-3 rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
-            />
+            <svg
+              width="100"
+              height="100"
+              viewBox="0 0 1821 1730"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-12 w-12 mr-3 rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 bg-white"
+              style={{ display: "inline-block", verticalAlign: "middle" }}
+            >
+              <path d="M483.71,1384.19l0,-1117.03l514.254,0l231.924,435.648l0,-435.648l107.235,0l0,1119.23l-140.09,-0l0,-0.317l-0.331,0.317l-279.583,-292.139l0.509,-0.487l-0.509,-0l-0,-404.755l-332.876,695.183l-100.533,0Zm397.245,-1018.73l-296.712,0l0,761.498l296.712,-619.659l0,-141.839Zm348.933,572.098l-231.924,-435.648l-0,550.126l231.924,242.34l0,-356.818Z" />
+            </svg>
+
             <span className="text-2xl font-bold tracking-widest">INSOMNIA</span>
           </div>
           {/* Center: Nav Links */}
