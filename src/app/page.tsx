@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import Hero from "./Hero";
@@ -11,6 +13,15 @@ interface Product {
   image_url?: string;
   category?: string;
   stock_quantity?: number;
+}
+
+function isErrorWithMessage(err: unknown): err is { message: string } {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err &&
+    typeof (err as { message: unknown }).message === "string"
+  );
 }
 
 export default function Home() {
@@ -30,8 +41,12 @@ export default function Home() {
         } else {
           setError(data.error || "Failed to fetch products");
         }
-      } catch (err: any) {
-        setError(err.message || "Unknown error");
+      } catch (err: unknown) {
+        let message = "Unknown error";
+        if (isErrorWithMessage(err)) {
+          message = err.message;
+        }
+        setError(message);
       } finally {
         setLoading(false);
       }
