@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { uuidSchema, productSchema } from '@/lib/validations';
 import { getAuthUser } from '@/lib/auth';
+import { handleApiError, validateUUID, DatabaseError, NotFoundError, AuthenticationError, ValidationError, ConflictError } from '@/lib/error-handler';
 
 interface RouteParams {
   params: { id: string };
@@ -14,7 +15,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const validatedId = uuidSchema.parse(id);
+    const validatedId = validateUUID(id, 'Product ID');
 
     const { data: product, error } = await supabase
       .from('products')
@@ -24,32 +25,18 @@ export async function GET(
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Product not found' },
-          { status: 404 }
-        );
+        throw new NotFoundError('Product not found');
       }
-      console.error('Database error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch product' },
-        { status: 500 }
-      );
+      throw new DatabaseError('Failed to fetch product', error.code, error);
+    }
+
+    if (!product) {
+      throw new NotFoundError('Product not found');
     }
 
     return NextResponse.json(product);
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Invalid product ID' },
-        { status: 400 }
-      );
-    }
-
-    console.error('Server error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
@@ -61,16 +48,49 @@ export async function PUT(
   try {
     const user = await getAuthUser(request);
     if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      throw new AuthenticationError();
     }
 
     const { id } = await params;
-    const validatedId = uuidSchema.parse(id);
-    const body = await request.json();
+    const validatedId = validateUUID(id, 'Product ID');
+    
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      throw new ValidationError('Invalid JSON in request body');
+    }
+
+    if (!body || typeof body !== 'object') {
+      throw new ValidationError('Request body must be a valid object');
+    }
+
     const validatedData = productSchema.partial().parse(body);
+
+    // Check if product exists first
+    const { data: existingProduct, error: fetchError } = await supabase
+      .from('products')
+      .select('id, name')
+      .eq('id', validatedId)
+      .single();
+
+    if (fetchError || !existingProduct) {
+      throw new NotFoundError('Product not found');
+    }
+
+    // If updating name, check for duplicates
+    if (validatedData.name && validatedData.name !== existingProduct.name) {
+      const { data: duplicateProduct } = await supabase
+        .from('products')
+        .select('id')
+        .ilike('name', validatedData.name)
+        .neq('id', validatedId)
+        .single();
+
+      if (duplicateProduct) {
+        throw new ConflictError('A product with this name already exists');
+      }
+    }
 
     const { data: product, error } = await supabase
       .from('products')
@@ -80,33 +100,16 @@ export async function PUT(
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Product not found' },
-          { status: 404 }
-        );
-      }
-      console.error('Database error:', error);
-      return NextResponse.json(
-        { error: 'Failed to update product' },
-        { status: 500 }
-      );
+      throw new DatabaseError('Failed to update product', error.code, error);
+    }
+
+    if (!product) {
+      throw new DatabaseError('Product update failed');
     }
 
     return NextResponse.json(product);
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('Server error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
 
@@ -118,14 +121,37 @@ export async function DELETE(
   try {
     const user = await getAuthUser(request);
     if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      throw new AuthenticationError();
     }
 
     const { id } = await params;
-    const validatedId = uuidSchema.parse(id);
+    const validatedId = validateUUID(id, 'Product ID');
+
+    // Check if product exists first
+    const { data: existingProduct, error: fetchError } = await supabase
+      .from('products')
+      .select('id')
+      .eq('id', validatedId)
+      .single();
+
+    if (fetchError || !existingProduct) {
+      throw new NotFoundError('Product not found');
+    }
+
+    // Check if product is referenced in any orders
+    const { data: orderItems, error: orderCheckError } = await supabase
+      .from('order_items')
+      .select('id')
+      .eq('product_id', validatedId)
+      .limit(1);
+
+    if (orderCheckError) {
+      throw new DatabaseError('Failed to check product references', orderCheckError.code, orderCheckError);
+    }
+
+    if (orderItems && orderItems.length > 0) {
+      throw new ConflictError('Cannot delete product that has been ordered');
+    }
 
     const { error } = await supabase
       .from('products')
@@ -133,26 +159,14 @@ export async function DELETE(
       .eq('id', validatedId);
 
     if (error) {
-      console.error('Database error:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete product' },
-        { status: 500 }
-      );
+      throw new DatabaseError('Failed to delete product', error.code, error);
     }
 
-    return NextResponse.json({ message: 'Product deleted successfully' });
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Invalid product ID' },
-        { status: 400 }
-      );
-    }
-
-    console.error('Server error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ 
+      message: 'Product deleted successfully',
+      deletedId: validatedId 
+    });
+  } catch (error) {
+    return handleApiError(error);
   }
 }

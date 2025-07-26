@@ -1,12 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { userRegistrationSchema } from '@/lib/validations';
+import { handleApiError, ValidationError, ConflictError, DatabaseError } from '@/lib/error-handler';
 
 // POST /api/auth/register - User registration
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      throw new ValidationError('Invalid JSON in request body');
+    }
+
+    if (!body || typeof body !== 'object') {
+      throw new ValidationError('Request body must be a valid object');
+    }
+
     const validatedData = userRegistrationSchema.parse(body);
+
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', validatedData.email)
+      .single();
+
+    if (existingUser) {
+      throw new ConflictError('User with this email already exists');
+    }
 
     // Register user with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -20,26 +42,23 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      console.error('Auth registration error:', authError);
-      
       if (authError.message.includes('already registered')) {
-        return NextResponse.json(
-          { error: 'User with this email already exists' },
-          { status: 409 }
-        );
+        throw new ConflictError('User with this email already exists');
       }
       
-      return NextResponse.json(
-        { error: 'Registration failed' },
-        { status: 400 }
-      );
+      if (authError.message.includes('Password')) {
+        throw new ValidationError('Password does not meet requirements', { password: authError.message });
+      }
+      
+      if (authError.message.includes('Email')) {
+        throw new ValidationError('Invalid email format', { email: authError.message });
+      }
+      
+      throw new ValidationError('Registration failed: ' + authError.message);
     }
 
     if (!authData.user) {
-      return NextResponse.json(
-        { error: 'Registration failed' },
-        { status: 400 }
-      );
+      throw new ValidationError('Registration failed - no user data returned');
     }
 
     // Create user profile in our users table
@@ -54,12 +73,9 @@ export async function POST(request: NextRequest) {
       }]);
 
     if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Note: In production, you might want to clean up the auth user here
-      return NextResponse.json(
-        { error: 'Failed to create user profile' },
-        { status: 500 }
-      );
+      // Clean up the auth user if profile creation fails
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      throw new DatabaseError('Failed to create user profile', profileError.code, profileError);
     }
 
     return NextResponse.json({
@@ -70,18 +86,7 @@ export async function POST(request: NextRequest) {
         name: validatedData.name,
       },
     }, { status: 201 });
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('Server error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }

@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { userLoginSchema } from '@/lib/validations';
+import { handleApiError, ValidationError, AuthenticationError, DatabaseError } from '@/lib/error-handler';
 
 // POST /api/auth/login - User login
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      throw new ValidationError('Invalid JSON in request body');
+    }
+
+    if (!body || typeof body !== 'object') {
+      throw new ValidationError('Request body must be a valid object');
+    }
+
     const validatedData = userLoginSchema.parse(body);
 
     // Authenticate user with Supabase Auth
@@ -15,26 +26,23 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      console.error('Auth login error:', authError);
-      
       if (authError.message.includes('Invalid login credentials')) {
-        return NextResponse.json(
-          { error: 'Invalid email or password' },
-          { status: 401 }
-        );
+        throw new AuthenticationError('Invalid email or password');
       }
       
-      return NextResponse.json(
-        { error: 'Login failed' },
-        { status: 400 }
-      );
+      if (authError.message.includes('Email not confirmed')) {
+        throw new AuthenticationError('Please confirm your email address before logging in');
+      }
+      
+      if (authError.message.includes('Too many requests')) {
+        throw new ValidationError('Too many login attempts. Please try again later');
+      }
+      
+      throw new AuthenticationError('Login failed: ' + authError.message);
     }
 
     if (!authData.user || !authData.session) {
-      return NextResponse.json(
-        { error: 'Login failed' },
-        { status: 400 }
-      );
+      throw new AuthenticationError('Login failed - invalid response');
     }
 
     // Fetch user profile
@@ -45,11 +53,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError) {
-      console.error('Profile fetch error:', profileError);
-      return NextResponse.json(
-        { error: 'Failed to fetch user profile' },
-        { status: 500 }
-      );
+      throw new DatabaseError('Failed to fetch user profile', profileError.code, profileError);
+    }
+
+    if (!userProfile) {
+      throw new DatabaseError('User profile not found');
     }
 
     return NextResponse.json({
@@ -61,18 +69,7 @@ export async function POST(request: NextRequest) {
         expires_at: authData.session.expires_at,
       },
     });
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('Server error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleApiError(error);
   }
 }
