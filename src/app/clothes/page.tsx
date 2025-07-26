@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 type Product = {
   id: string;
@@ -14,6 +15,7 @@ export default function ClothesPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -44,74 +46,114 @@ export default function ClothesPage() {
               Няма налични продукти.
             </div>
           ) : (
-            products.map((product) => (
-              <div
-                key={product.id}
-                className="paint-wrapper bg-white rounded-xl shadow-lg overflow-hidden flex flex-col hover:shadow-2xl transition-shadow group cursor-pointer relative"
-                style={{
-                  width: "100%",
-                  aspectRatio: "1/1",
-                  maxWidth: 400,
-                  margin: "0 auto",
-                }}
-              >
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  className="product-image object-cover w-full h-full"
-                />
-                <div className="paint-overlay group-hover:animate-paintReveal" />
-                <Link
-                  href={`/product/${product.id}`}
-                  className="absolute inset-0 flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ pointerEvents: "auto" }}
+            products.map((product) => {
+              const isHovered = hovered === product.id;
+              return (
+                <div
+                  key={product.id}
+                  className="glitch-wrapper bg-white rounded-xl shadow-lg overflow-hidden flex flex-col hover:shadow-2xl transition-shadow group cursor-pointer relative"
+                  style={{
+                    width: "100%",
+                    aspectRatio: "1/1",
+                    maxWidth: 400,
+                    margin: "0 auto",
+                  }}
+                  onMouseEnter={() => setHovered(product.id)}
+                  onMouseLeave={() => setHovered(null)}
                 >
-                  <span className="px-6 py-3 border border-white text-white text-lg font-semibold rounded-full bg-black bg-opacity-30 backdrop-blur-sm transition-all hover:bg-opacity-60 cursor-pointer">
-                    Виж продукта
-                  </span>
-                </Link>
-                <div className="absolute bottom-0 left-0 w-full bg-white bg-opacity-90 py-4 flex justify-center">
-                  <h2 className="text-xl font-semibold text-gray-900 text-center">
-                    {product.name}
-                  </h2>
+                  <div
+                    className={`relative w-full h-full ${
+                      isHovered ? "glitch-animate" : ""
+                    }`}
+                  >
+                    <Image
+                      src={product.image_url}
+                      alt={product.name}
+                      fill
+                      className="product-image object-cover"
+                    />
+                  </div>
+                  {/* Dark overlay */}
+                  <div
+                    className={`absolute inset-0 bg-black transition-opacity duration-500 z-10 ${
+                      isHovered ? "opacity-60" : "opacity-0"
+                    }`}
+                  />
+                  <Link
+                    href={`/product/${product.id}`}
+                    className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                    style={{ pointerEvents: "auto" }}
+                  >
+                    <span className="px-6 py-3 border border-white text-white text-lg font-semibold rounded-full bg-black bg-opacity-30 backdrop-blur-sm transition-all hover:bg-opacity-60 cursor-pointer">
+                      Виж продукта
+                    </span>
+                  </Link>
+                  <div className="absolute bottom-0 left-0 w-full bg-white bg-opacity-90 py-4 flex flex-col justify-center">
+                    <h2 className="text-xl font-semibold text-gray-900 text-center">
+                      {product.name}
+                    </h2>
+                    <p className="text-lg font-bold text-black text-center mt-1">
+                      {product.price} лв.
+                    </p>
+                  </div>
+                  <style jsx>{`
+                    .glitch-animate {
+                      animation: glitch 0.6s ease-in-out;
+                    }
+
+                    @keyframes glitch {
+                      0% {
+                        transform: translate(0);
+                        filter: hue-rotate(0deg);
+                      }
+                      10% {
+                        transform: translate(-2px, 2px);
+                        filter: hue-rotate(15deg) brightness(1.1);
+                      }
+                      20% {
+                        transform: translate(2px, -2px);
+                        filter: hue-rotate(-15deg) contrast(1.1);
+                      }
+                      30% {
+                        transform: translate(-1px, 1px);
+                        filter: hue-rotate(10deg) saturate(1.05);
+                      }
+                      40% {
+                        transform: translate(1px, -1px);
+                        filter: hue-rotate(-10deg) brightness(0.95);
+                      }
+                      50% {
+                        transform: translate(-3px, 3px);
+                        filter: hue-rotate(20deg) contrast(0.95);
+                      }
+                      60% {
+                        transform: translate(3px, -3px);
+                        filter: hue-rotate(-20deg) saturate(0.95);
+                      }
+                      70% {
+                        transform: translate(-1px, 1px);
+                        filter: hue-rotate(5deg) brightness(1.05);
+                      }
+                      80% {
+                        transform: translate(1px, -1px);
+                        filter: hue-rotate(-5deg) contrast(1.05);
+                      }
+                      90% {
+                        transform: translate(-2px, 2px);
+                        filter: hue-rotate(12deg) saturate(1.02);
+                      }
+                      100% {
+                        transform: translate(0);
+                        filter: hue-rotate(0deg);
+                      }
+                    }
+                  `}</style>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
-      <style jsx>{`
-        .paint-wrapper {
-          position: relative;
-          width: 100%;
-          aspect-ratio: 1/1;
-          max-width: 400px;
-        }
-        .product-image {
-          width: 100%;
-          height: 100%;
-          display: block;
-        }
-        .paint-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: black;
-          clip-path: circle(0% at 50% 50%);
-          pointer-events: none;
-          z-index: 5;
-        }
-        .group:hover .paint-overlay {
-          animation: paintReveal 1.2s ease forwards;
-        }
-        @keyframes paintReveal {
-          to {
-            clip-path: circle(150% at 50% 50%);
-          }
-        }
-      `}</style>
     </div>
   );
 }
