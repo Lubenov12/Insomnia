@@ -1,112 +1,80 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { addToCartSchema } from '@/lib/validations';
-import { getAuthUser } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
-// POST /api/cart - Add item to cart
-export async function POST(request: NextRequest) {
+// Validation schema for cart operations
+const addToCartSchema = z.object({
+  product_id: z.string().min(1, "Product ID is required"),
+  size: z.string().min(1, "Size is required"),
+  quantity: z.number().min(1, "Quantity must be at least 1"),
+});
+
+// In-memory cart storage (in production, this would be in database)
+const cartItems: Array<{
+  id: string;
+  product_id: string;
+  size: string;
+  quantity: number;
+  added_at: string;
+  price?: number;
+}> = [];
+
+export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthUser(request);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const validatedData = addToCartSchema.parse({
-      ...body,
-      user_id: user.id,
+    return NextResponse.json({
+      items: cartItems,
+      total: cartItems.reduce(
+        (sum, item) => sum + (item.price || 0) * item.quantity,
+        0
+      ),
+      count: cartItems.length,
     });
-
-    // Check if product exists and has sufficient stock
-    const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('stock_quantity')
-      .eq('id', validatedData.product_id)
-      .single();
-
-    if (productError || !product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
-    }
-
-    if (product.stock_quantity < validatedData.quantity) {
-      return NextResponse.json(
-        { error: 'Insufficient stock' },
-        { status: 400 }
-      );
-    }
-
-    // Check if item already exists in cart
-    const { data: existingItem } = await supabase
-      .from('cart_items')
-      .select('*')
-      .eq('user_id', validatedData.user_id)
-      .eq('product_id', validatedData.product_id)
-      .single();
-
-    let cartItem;
-    if (existingItem) {
-      // Update existing cart item
-      const newQuantity = existingItem.quantity + validatedData.quantity;
-      
-      if (newQuantity > product.stock_quantity) {
-        return NextResponse.json(
-          { error: 'Insufficient stock for requested quantity' },
-          { status: 400 }
-        );
-      }
-
-      const { data, error } = await supabase
-        .from('cart_items')
-        .update({ quantity: newQuantity })
-        .eq('id', existingItem.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Database error:', error);
-        return NextResponse.json(
-          { error: 'Failed to update cart item' },
-          { status: 500 }
-        );
-      }
-      cartItem = data;
-    } else {
-      // Create new cart item
-      const { data, error } = await supabase
-        .from('cart_items')
-        .insert([validatedData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Database error:', error);
-        return NextResponse.json(
-          { error: 'Failed to add item to cart' },
-          { status: 500 }
-        );
-      }
-      cartItem = data;
-    }
-
-    return NextResponse.json(cartItem, { status: 201 });
-  } catch (error: any) {
-    if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('Server error:', error);
+  } catch (error) {
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Cart retrieval error" },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    // Validate request body
+    const validatedData = addToCartSchema.parse(body);
+
+    // In a real app, you would:
+    // 1. Get product details from database
+    // 2. Check if user is authenticated
+    // 3. Add to user's cart in database
+
+    // For now, we'll simulate adding to cart
+    const newItem = {
+      id: Date.now().toString(),
+      product_id: validatedData.product_id,
+      size: validatedData.size,
+      quantity: validatedData.quantity,
+      added_at: new Date().toISOString(),
+    };
+
+    cartItems.push(newItem);
+
+    return NextResponse.json(
+      {
+        message: "Product added to cart successfully",
+        item: newItem,
+        cart_count: cartItems.length,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation error", details: error.issues },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ error: "Add to cart error" }, { status: 500 });
   }
 }

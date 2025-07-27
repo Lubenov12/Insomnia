@@ -1,24 +1,24 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables:', {
+  console.error("Missing Supabase environment variables:", {
     url: !!supabaseUrl,
     anonKey: !!supabaseAnonKey,
   });
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseAnonKey || "placeholder-key"
 );
 
 // Server-side client with service role key for admin operations
 export const supabaseAdmin = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key'
+  supabaseUrl || "https://placeholder.supabase.co",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder-service-key"
 );
 
 // Database types
@@ -30,24 +30,45 @@ export interface Product {
   image_url: string;
   category: string;
   stock_quantity: number;
+  size_s_quantity?: number;
+  size_m_quantity?: number;
+  size_l_quantity?: number;
+  size_xl_quantity?: number;
   created_at: string;
 }
 
 export interface User {
   id: string;
   name: string;
-  email: string;
-  address: string;
-  phone_number: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+  marketing_emails?: boolean;
   created_at: string;
+}
+
+export interface UserRegistration {
+  name: string;
+  email?: string;
+  phone_number?: string;
+  password: string;
+  confirmPassword: string;
+  marketing_emails: boolean;
+  accept_terms: boolean;
+  accept_privacy: boolean;
+}
+
+export interface UserLogin {
+  email: string;
+  password: string;
 }
 
 export interface Order {
   id: string;
   user_id: string;
-  status: 'pending' | 'shipped' | 'delivered' | 'cancelled';
+  status: "pending" | "shipped" | "delivered" | "cancelled";
   total_amount: number;
-  payment_method: 'card' | 'cod';
+  payment_method: "card" | "cod";
   created_at: string;
 }
 
@@ -72,4 +93,11 @@ export interface CartItem {
   product_id: string;
   quantity: number;
   created_at: string;
+}
+
+export interface ShippingAddress {
+  address: string;
+  city: string;
+  postal_code: string;
+  country: string;
 }

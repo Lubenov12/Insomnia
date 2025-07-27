@@ -1,42 +1,29 @@
-import Link from "next/link";
+"use client";
+import React from "react";
 
 export default function CheckoutPage() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-8">
-      <h1 className="text-3xl font-bold mb-4">Поръчка</h1>
-      <form className="flex flex-col gap-4 w-full max-w-md">
-        <label className="font-semibold">Изберете начин на плащане:</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input type="radio" name="payment" value="card" defaultChecked />
-            Карта (Stripe)
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="radio" name="payment" value="cod" />
-            Наложен платеж (Еконт/Спиди)
-          </label>
+    <div className="min-h-screen bg-gray-100 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Плащане</h1>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold text-gray-600 mb-4">
+              Функционалността за плащане ще бъде добавена скоро
+            </h2>
+            <p className="text-gray-500 mb-6">
+              В момента работим по интеграцията с платежни системи
+            </p>
+            <a
+              href="/cart"
+              className="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Върнете се към количката
+            </a>
+          </div>
         </div>
-        <label className="font-semibold">Изберете куриер:</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input type="radio" name="courier" value="econt" defaultChecked />
-            Еконт
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="radio" name="courier" value="speedy" />
-            Спиди
-          </label>
-        </div>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-green-600 text-white rounded"
-        >
-          Потвърди поръчката
-        </button>
-      </form>
-      <Link href="/" className="text-blue-700 underline mt-8">
-        Обратно към началото
-      </Link>
-    </main>
+      </div>
+    </div>
   );
 }

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Example: POST /api/stripe/checkout
-export async function POST(req: NextRequest) {
-  const data = await req.json();
-  // Placeholder: return mock Stripe session
-  return NextResponse.json({
-    sessionId: "MOCK_STRIPE_SESSION",
-    url: "https://checkout.stripe.com/pay/cs_test_mock",
-    ...data,
-  });
+// Stripe API endpoint - placeholder for future implementation
+export async function POST(request: NextRequest) {
+  try {
+    // TODO: Implement Stripe payment processing
+    return NextResponse.json({
+      message: "Stripe endpoint - coming soon",
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Payment processing error" },
+      { status: 500 }
+    );
+  }
 }
