@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
@@ -23,4 +25,159 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Optimized video rendering for CPU-only environments */
+video {
+  /* Remove GPU-dependent transforms */
+  will-change: auto;
+  /* Use simpler rendering */
+  image-rendering: auto;
+  /* Prevent unnecessary repaints */
+  contain: layout style paint;
+}
+
+/* Simplified video container without complex gradients */
+.video-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  /* Simple solid background instead of animated gradient */
+  background: #000000;
+}
+
+/* Optimized fullscreen video positioning */
+.fullscreen-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  z-index: 5;
+  /* Remove GPU-dependent properties */
+  will-change: auto;
+}
+
+.video-container video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  object-position: center;
+  z-index: 5;
+  /* Optimized rendering */
+  image-rendering: auto;
+  contain: layout style paint;
+}
+
+/* Responsive video sizing */
+@media (max-width: 768px) {
+  .video-container video {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+}
+
+@media (min-width: 769px) {
+  .video-container video {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+}
+
+/* Lightweight animation utilities for CPU-only environments */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Optimized animation classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-pulse-light {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-spin-light {
+  animation: spin 2s linear infinite;
+  will-change: transform;
+}
+
+/* GPU-optimized transitions */
+.gpu-transition {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  will-change: opacity, transform;
+}
+
+/* Fallback for when GPU acceleration is disabled */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-pulse-light,
+  .animate-spin-light {
+    animation: none;
+  }
+
+  .gpu-transition {
+    transition: none;
+  }
 }

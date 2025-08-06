@@ -1,6 +1,15 @@
 import { z } from "zod";
 
 // Product validation schemas
+const variantSchema = z.object({
+  size: z.string().min(1, "Size is required"),
+  stock_quantity: z
+    .number()
+    .int("Stock quantity must be a whole number")
+    .min(0, "Stock quantity cannot be negative")
+    .max(999999, "Stock quantity cannot exceed 999,999"),
+});
+
 export const productSchema = z.object({
   name: z
     .string()
@@ -48,6 +57,7 @@ export const productSchema = z.object({
     .int("Stock quantity must be a whole number")
     .min(0, "Stock quantity cannot be negative")
     .max(999999, "Stock quantity cannot exceed 999,999"),
+  variants: z.array(variantSchema).optional(),
 });
 
 // Simplified user registration schema

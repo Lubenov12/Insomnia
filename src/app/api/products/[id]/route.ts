@@ -22,7 +22,7 @@ export async function GET(
     const { data: product, error } = await supabase
       .from("products")
       .select(
-        "id, name, description, price, image_url, stock_quantity, category, created_at, size_s_quantity, size_m_quantity, size_l_quantity, size_xl_quantity"
+        "id, name, description, price, image_url, stock_quantity, category, created_at"
       )
       .eq("id", id)
       .single();
@@ -38,21 +38,35 @@ export async function GET(
       throw new NotFoundError("Product not found");
     }
 
-    // Create size availability object from product columns
-    const sizeAvailability = {
-      S: product.size_s_quantity || 0,
-      M: product.size_m_quantity || 0,
-      L: product.size_l_quantity || 0,
-      XL: product.size_xl_quantity || 0,
-    };
+    // Fetch product variants
+    const { data: variants, error: variantsError } = await supabase
+      .from("product_variants")
+      .select("id, size, stock_quantity, created_at, updated_at")
+      .eq("product_id", id)
+      .order("size");
 
-    // Add size availability to product
-    const productWithSizes = {
+    if (variantsError) {
+      throw new DatabaseError(
+        "Failed to fetch product variants",
+        variantsError.code,
+        variantsError
+      );
+    }
+
+    // Create size availability object from variants
+    const sizeAvailability: { [key: string]: number } = {};
+    variants?.forEach((variant) => {
+      sizeAvailability[variant.size] = variant.stock_quantity;
+    });
+
+    // Add variants and size availability to product
+    const productWithVariants = {
       ...product,
+      variants: variants || [],
       size_availability: sizeAvailability,
     };
 
-    return NextResponse.json(productWithSizes);
+    return NextResponse.json(productWithVariants);
   } catch (error) {
     return handleApiError(error);
   }

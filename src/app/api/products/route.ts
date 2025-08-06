@@ -17,7 +17,7 @@ import {
   ConflictError,
 } from "@/lib/error-handler";
 
-// Cache configuration
+// Enhanced cache configuration
 const CACHE_DURATION = 300; // 5 minutes
 const cache = new Map();
 
@@ -27,7 +27,7 @@ function generateCacheKey(searchParams: URLSearchParams): string {
   return `products:${params.toString()}`;
 }
 
-// GET /api/products - Get all products with optional filtering
+// GET /api/products - Get all products with optimized querying
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -67,27 +67,28 @@ export async function GET(request: NextRequest) {
       : null;
     const search = searchData.query ? sanitizeInput(searchData.query) : null;
 
-    // Optimize query with better indexing hints
+    // Optimized query with only necessary fields and better indexing
     let query = supabase
       .from("products")
       .select(
-        "id, name, description, price, image_url, stock_quantity, created_at",
-        { count: "exact" }
+        // Only select necessary fields for the product list
+        "id, name, price, image_url, category, stock_quantity"
       )
       .gte("stock_quantity", 1) // Only show products in stock
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
+    // Apply filters if provided
     if (category) {
-      query = query.ilike("category", `%${category}%`);
+      query = query.eq("category", category); // Use exact match instead of ilike for better performance
     }
 
     if (search) {
       // Use more efficient search with proper indexing
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      query = query.or(`name.ilike.%${search}%`);
     }
 
-    const { data: products, error, count } = await query;
+    const { data: products, error } = await query;
 
     if (error) {
       throw new DatabaseError("Failed to fetch products", error.code, error);
@@ -97,6 +98,22 @@ export async function GET(request: NextRequest) {
     if (!Array.isArray(products)) {
       throw new DatabaseError("Invalid response from database");
     }
+
+    // Get total count with optimized query
+    let countQuery = supabase
+      .from("products")
+      .select("*", { count: "exact", head: true })
+      .gte("stock_quantity", 1);
+
+    if (category) {
+      countQuery = countQuery.eq("category", category);
+    }
+
+    if (search) {
+      countQuery = countQuery.or(`name.ilike.%${search}%`);
+    }
+
+    const { count } = await countQuery;
 
     const responseData = {
       products,
@@ -130,6 +147,9 @@ export async function GET(request: NextRequest) {
       headers: {
         "Cache-Control": "public, max-age=300, s-maxage=600",
         "X-Cache": "MISS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Cache-Control",
       },
     });
   } catch (error) {
@@ -179,9 +199,14 @@ export async function POST(request: NextRequest) {
       throw new ConflictError("A product with this name already exists");
     }
 
+    // Extract variants from request body if provided
+    const { variants, ...productData } = body as {
+      variants?: Array<{ size: string; stock_quantity: number }>;
+    } & typeof validatedData;
+
     const { data: product, error } = await supabase
       .from("products")
-      .insert([validatedData])
+      .insert([productData])
       .select()
       .single();
 
@@ -191,6 +216,30 @@ export async function POST(request: NextRequest) {
 
     if (!product) {
       throw new DatabaseError("Product was not created successfully");
+    }
+
+    // Create variants if provided
+    if (variants && variants.length > 0) {
+      const variantData = variants.map((variant) => ({
+        product_id: product.id,
+        size: variant.size,
+        stock_quantity: variant.stock_quantity,
+      }));
+
+      const { error: variantsError } = await supabase
+        .from("product_variants")
+        .insert(variantData);
+
+      if (variantsError) {
+        // Rollback product creation if variants fail
+        await supabase.from("products").delete().eq("id", product.id);
+
+        throw new DatabaseError(
+          "Failed to create product variants",
+          variantsError.code,
+          variantsError
+        );
+      }
     }
 
     // Clear cache when new product is added

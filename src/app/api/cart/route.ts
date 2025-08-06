@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { supabase } from "@/lib/supabase";
 
 // Validation schema for cart operations
 const addToCartSchema = z.object({
@@ -43,10 +44,32 @@ export async function POST(request: NextRequest) {
     // Validate request body
     const validatedData = addToCartSchema.parse(body);
 
+    // Check if product variant exists and has sufficient stock
+    const { data: variant, error: variantError } = await supabase
+      .from("product_variants")
+      .select("stock_quantity")
+      .eq("product_id", validatedData.product_id)
+      .eq("size", validatedData.size)
+      .single();
+
+    if (variantError || !variant) {
+      return NextResponse.json(
+        { error: "Product variant not found" },
+        { status: 404 }
+      );
+    }
+
+    if (variant.stock_quantity < validatedData.quantity) {
+      return NextResponse.json(
+        { error: "Insufficient stock for selected size" },
+        { status: 400 }
+      );
+    }
+
     // In a real app, you would:
-    // 1. Get product details from database
-    // 2. Check if user is authenticated
-    // 3. Add to user's cart in database
+    // 1. Get user from authentication
+    // 2. Add to user's cart in database
+    // 3. Optionally decrement stock
 
     // For now, we'll simulate adding to cart
     const newItem = {

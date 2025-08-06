@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./Navbar";
+import PageTransition from "./components/PageTransition";
 
 // Optimize font loading with display swap and preload
 const inter = Inter({
@@ -63,7 +64,7 @@ export default function RootLayout({
         {/* Preload critical resources */}
         <link
           rel="preload"
-          href="/img/Test.mp4"
+          href="/img/Hard.mp4"
           as="video"
           type="video/mp4"
           crossOrigin="anonymous"
@@ -85,8 +86,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/img/icon-192x192.png" />
       </head>
       <body className="antialiased bg-white text-black">
+        <PageTransition />
         <Navbar />
-        <div style={{ minHeight: "100vh", paddingTop: "4rem" }}>{children}</div>
+        <main>{children}</main>
       </body>
     </html>
   );

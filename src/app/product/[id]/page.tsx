@@ -3,8 +3,18 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import Footer from "../../components/Footer";
 
 const SIZES = ["S", "M", "L", "XL"];
+
+type ProductVariant = {
+  id: string;
+  product_id: string;
+  size: string;
+  stock_quantity: number;
+  created_at: string;
+  updated_at: string;
+};
 
 type Product = {
   id: string;
@@ -14,15 +24,13 @@ type Product = {
   image_url: string;
   stock_quantity: number;
   category: string;
+  variants?: ProductVariant[];
   size_availability: {
-    S: number;
-    M: number;
-    L: number;
-    XL: number;
+    [key: string]: number;
   };
 };
 
-// Memoized Size Button Component
+// Memoized Size Button Component with dark theme
 const SizeButton = React.memo(
   ({
     size,
@@ -34,26 +42,26 @@ const SizeButton = React.memo(
     selected: boolean;
     onClick: () => void;
     available: number;
-  }) => (
-    <button
-      className={`px-4 py-2 rounded-lg border font-semibold text-lg transition-colors cursor-pointer relative ${
-        available > 0
-          ? selected
-            ? "bg-black text-white border-black"
-            : "bg-white text-gray-800 border-gray-400 hover:bg-gray-200"
-          : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-      }`}
-      onClick={onClick}
-      disabled={available === 0}
-    >
-      {size}
-      {available > 0 && (
-        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-          {available}
-        </span>
-      )}
-    </button>
-  )
+  }) => {
+    const isLowStock = available > 0 && available < 5;
+    const isOutOfStock = available === 0;
+
+    return (
+      <button
+        className={`px-4 py-2 rounded-lg border font-semibold text-lg transition-all duration-300 cursor-pointer relative ${
+          isOutOfStock
+            ? "bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed"
+            : selected
+            ? "bg-purple-600 text-white border-purple-500 shadow-lg shadow-purple-500/25"
+            : "bg-gray-800 text-gray-300 border-gray-600 hover:bg-gray-700 hover:border-purple-500"
+        }`}
+        onClick={onClick}
+        disabled={isOutOfStock}
+      >
+        {size}
+      </button>
+    );
+  }
 );
 
 SizeButton.displayName = "SizeButton";
@@ -79,26 +87,26 @@ const HeartIcon = React.memo(({ favorited }: { favorited: boolean }) => (
 
 HeartIcon.displayName = "HeartIcon";
 
-// Loading Skeleton Component
+// Loading Skeleton Component with dark theme
 const ProductSkeleton = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-100">
-    <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden animate-pulse">
-      <div className="md:w-1/2 bg-gray-300 h-96"></div>
+  <div className="min-h-screen flex items-center justify-center bg-black">
+    <div className="w-full max-w-3xl bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-pulse">
+      <div className="md:w-1/2 bg-gray-800 h-96"></div>
       <div className="md:w-1/2 p-8">
-        <div className="h-8 bg-gray-300 rounded mb-2"></div>
-        <div className="h-6 bg-gray-300 rounded w-1/3 mb-4"></div>
-        <div className="h-4 bg-gray-300 rounded mb-2"></div>
-        <div className="h-4 bg-gray-300 rounded mb-2"></div>
-        <div className="h-4 bg-gray-300 rounded mb-6"></div>
-        <div className="h-6 bg-gray-300 rounded w-1/4 mb-2"></div>
+        <div className="h-8 bg-gray-800 rounded mb-2"></div>
+        <div className="h-6 bg-gray-800 rounded w-1/3 mb-4"></div>
+        <div className="h-4 bg-gray-800 rounded mb-2"></div>
+        <div className="h-4 bg-gray-800 rounded mb-2"></div>
+        <div className="h-4 bg-gray-800 rounded mb-6"></div>
+        <div className="h-6 bg-gray-800 rounded w-1/4 mb-2"></div>
         <div className="flex gap-3 mb-6">
           {SIZES.map((size) => (
-            <div key={size} className="w-12 h-10 bg-gray-300 rounded"></div>
+            <div key={size} className="w-12 h-10 bg-gray-800 rounded"></div>
           ))}
         </div>
         <div className="flex gap-4">
-          <div className="flex-1 h-12 bg-gray-300 rounded"></div>
-          <div className="w-12 h-12 bg-gray-300 rounded"></div>
+          <div className="flex-1 h-12 bg-gray-800 rounded"></div>
+          <div className="w-12 h-12 bg-gray-800 rounded"></div>
         </div>
       </div>
     </div>
@@ -113,6 +121,11 @@ export default function ProductPage() {
   const [selectedSize, setSelectedSize] = useState<string>("M");
   const [addedToCart, setAddedToCart] = useState(false);
   const [favorited, setFavorited] = useState(false);
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 2,
+    minutes: 45,
+    seconds: 30,
+  });
 
   // Memoized fetch function
   const fetchProduct = useCallback(async () => {
@@ -135,15 +148,30 @@ export default function ProductPage() {
     fetchProduct();
   }, [fetchProduct]);
 
+  // Countdown timer effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev.seconds > 0) {
+          return { ...prev, seconds: prev.seconds - 1 };
+        } else if (prev.minutes > 0) {
+          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+        } else if (prev.hours > 0) {
+          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   // Memoized event handlers
   const handleAddToCart = useCallback(async () => {
     if (!product) return;
 
     // Check if selected size is available
-    const availableQuantity =
-      product.size_availability?.[
-        selectedSize as keyof typeof product.size_availability
-      ] || 0;
+    const availableQuantity = product.size_availability?.[selectedSize] || 0;
     if (availableQuantity === 0) {
       alert("Избраният размер не е наличен.");
       return;
@@ -188,9 +216,7 @@ export default function ProductPage() {
       if (
         product &&
         product.size_availability &&
-        product.size_availability[
-          size as keyof typeof product.size_availability
-        ] > 0
+        product.size_availability[size] > 0
       ) {
         setSelectedSize(size);
       }
@@ -207,11 +233,7 @@ export default function ProductPage() {
           size={size}
           selected={selectedSize === size}
           onClick={() => handleSizeSelect(size)}
-          available={
-            product?.size_availability?.[
-              size as keyof typeof product.size_availability
-            ] || 0
-          }
+          available={product?.size_availability?.[size] || 0}
         />
       )),
     [selectedSize, handleSizeSelect, product]
@@ -223,81 +245,225 @@ export default function ProductPage() {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 text-red-500">
+      <div className="min-h-screen flex items-center justify-center bg-black text-red-400">
         {error || "Продуктът не е намерен."}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 flex flex-col items-center">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden">
-        <div className="md:w-1/2 bg-gray-200 flex items-center justify-center h-96 relative">
-          {product.image_url ? (
-            <Image
-              src={product.image_url}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority={true}
-              placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-            />
-          ) : (
-            <span className="text-gray-400">Няма снимка</span>
-          )}
-        </div>
-        <div className="md:w-1/2 p-8 flex flex-col">
-          <h1 className="text-3xl font-bold mb-2 text-gray-900">
+    <div className="min-h-screen bg-black">
+      {/* Hero Section */}
+      <section className="bg-black py-16 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">
             {product.name}
           </h1>
-          <span className="text-lg font-bold text-green-700 mb-2">
-            {product.price} лв.
-          </span>
-          <p className="text-sm text-gray-500 mb-4">
-            Обща наличност: {product.stock_quantity} бр.
+          <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Открийте уникалния стил на INSOMNIA в този продукт.
           </p>
-          <p className="text-gray-700 mb-6 flex-1">{product.description}</p>
-          <div className="mb-6">
-            <span className="block text-gray-800 font-semibold mb-2">
-              Размер:
-            </span>
-            <div className="flex gap-3">{sizeButtons}</div>
-          </div>
-          <div className="flex gap-4">
-            <button
-              className="flex-1 py-3 bg-black text-white rounded-lg font-semibold text-lg hover:bg-gray-800 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleAddToCart}
-              disabled={
-                addedToCart ||
-                !product?.size_availability?.[
-                  selectedSize as keyof typeof product.size_availability
-                ]
-              }
-            >
-              {addedToCart ? "Добавено!" : "Добави в количката"}
-            </button>
-            <button
-              className={`flex items-center justify-center px-4 py-3 rounded-lg border ${
-                favorited
-                  ? "bg-red-100 border-red-400 text-red-600"
-                  : "bg-white border-gray-400 text-gray-700"
-              } hover:bg-red-200 transition-colors cursor-pointer`}
-              onClick={handleFavorite}
-              aria-label="Любими"
-            >
-              <HeartIcon favorited={favorited} />
-            </button>
-          </div>
-          <Link
-            href="/clothes"
-            className="mt-8 text-gray-500 hover:text-black underline text-center"
-          >
-            ← Обратно към дрехите
-          </Link>
         </div>
-      </div>
+      </section>
+
+      {/* Product Section */}
+      <section className="bg-black py-16 px-4">
+        <div className="w-full max-w-3xl mx-auto bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
+          <div className="md:w-1/2 bg-gray-800 flex items-center justify-center h-96 relative">
+            {product.image_url ? (
+              <Image
+                src={product.image_url}
+                alt={product.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority={true}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+              />
+            ) : (
+              <span className="text-gray-400">Няма снимка</span>
+            )}
+          </div>
+          <div className="md:w-1/2 p-8 flex flex-col">
+            {/* Insomnia-themed Promo Banner */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-800 border border-purple-600 rounded-lg shadow-2xl relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-indigo-400/10 animate-pulse"></div>
+              <div className="relative z-10 text-center">
+                <p className="text-purple-200 text-sm font-medium mb-2">
+                  🌙 Промоцията изтича след:
+                </p>
+                <div className="flex justify-center gap-3">
+                  <div className="bg-black/30 backdrop-blur-sm border border-purple-500 text-purple-200 px-4 py-3 rounded-lg shadow-lg">
+                    <div className="text-xl font-bold text-purple-100">
+                      {timeLeft.hours.toString().padStart(2, "0")}
+                    </div>
+                    <div className="text-xs text-purple-300">Часа</div>
+                  </div>
+                  <div className="bg-black/30 backdrop-blur-sm border border-purple-500 text-purple-200 px-4 py-3 rounded-lg shadow-lg">
+                    <div className="text-xl font-bold text-purple-100">
+                      {timeLeft.minutes.toString().padStart(2, "0")}
+                    </div>
+                    <div className="text-xs text-purple-300">Мин.</div>
+                  </div>
+                  <div className="bg-black/30 backdrop-blur-sm border border-purple-500 text-purple-200 px-4 py-3 rounded-lg shadow-lg">
+                    <div className="text-xl font-bold text-purple-100">
+                      {timeLeft.seconds.toString().padStart(2, "0")}
+                    </div>
+                    <div className="text-xs text-purple-300">Сек.</div>
+                  </div>
+                </div>
+                <p className="text-purple-300 text-xs mt-2">
+                  ✨ Ексклузивна нощна промоция
+                </p>
+              </div>
+            </div>
+
+            <h1 className="text-3xl font-bold mb-2 text-white">
+              {product.name}
+            </h1>
+            <span className="text-lg font-bold text-purple-400 mb-2">
+              {product.price} лв.
+            </span>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center">
+                <div className="flex text-yellow-400">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className="w-5 h-5 fill-current"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                    </svg>
+                  ))}
+                </div>
+                <span className="ml-2 text-sm text-gray-400">(24 отзива)</span>
+              </div>
+              <div className="text-sm text-gray-400">
+                Обща наличност: {product.stock_quantity} бр.
+              </div>
+            </div>
+            <p className="text-gray-300 mb-6 flex-1">{product.description}</p>
+
+            <div className="mb-6">
+              <span className="block text-gray-300 font-semibold mb-2">
+                Размер:
+              </span>
+              <div className="flex gap-3">{sizeButtons}</div>
+              {selectedSize &&
+                product?.size_availability?.[selectedSize] &&
+                product.size_availability[selectedSize] < 5 &&
+                product.size_availability[selectedSize] > 0 && (
+                  <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
+                    <p className="text-red-400 text-sm font-medium">
+                      ⚠️ Последни бройки в размер {selectedSize}!
+                    </p>
+                  </div>
+                )}
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-lg font-semibold text-lg hover:from-purple-700 hover:to-indigo-800 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 border border-purple-500/30"
+                onClick={handleAddToCart}
+                disabled={
+                  addedToCart || !product?.size_availability?.[selectedSize]
+                }
+              >
+                {addedToCart ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Добавено в количката!
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"
+                      />
+                    </svg>
+                    Добави в количката
+                  </span>
+                )}
+              </button>
+              <button
+                className={`flex items-center justify-center px-4 py-4 rounded-lg border transition-all duration-200 ${
+                  favorited
+                    ? "bg-red-900/20 border-red-500 text-red-400 hover:bg-red-900/30"
+                    : "bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700"
+                } hover:scale-105`}
+                onClick={handleFavorite}
+                aria-label="Любими"
+              >
+                <HeartIcon favorited={favorited} />
+              </button>
+            </div>
+            <Link
+              href="/clothes"
+              className="mt-8 text-gray-400 hover:text-purple-400 underline text-center transition-colors"
+            >
+              ← Обратно към дрехите
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Similar Products Section */}
+      <section className="bg-black py-16 px-4">
+        <div className="w-full max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Подобни продукти
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="bg-gray-900 border border-gray-700 rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:border-purple-500"
+              >
+                <div className="h-48 bg-gray-800 relative">
+                  <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                    -20%
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-white mb-2">
+                    Подобен продукт {item}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold text-purple-400">
+                      89 лв.
+                    </span>
+                    <span className="text-sm text-gray-500 line-through">
+                      112 лв.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

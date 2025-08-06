@@ -118,16 +118,26 @@ HeartIcon.displayName = "HeartIcon";
 
 const CartIcon = memo(() => (
   <svg
-    className="text-white w-6 h-6"
+    className="text-white w-6 h-6 group"
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
+    style={{ position: "relative", zIndex: 1 }}
   >
+    {/* Outline */}
     <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+      stroke="currentColor"
+      strokeWidth="2"
+      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H18M7 13l1.5-6m9.5 12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-10 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
+      className="transition-all duration-300"
+      style={{ zIndex: 2 }}
+    />
+    {/* Fill on hover */}
+    <path
+      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H18M7 13l1.5-6m9.5 12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-10 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
+      fill="#ffffff"
+      className="group-hover:opacity-100 opacity-0 transition-opacity duration-300"
+      style={{ zIndex: 1 }}
     />
   </svg>
 ));

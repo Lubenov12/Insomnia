@@ -22,6 +22,15 @@ export const supabaseAdmin = createClient(
 );
 
 // Database types
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  size: string;
+  stock_quantity: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -30,11 +39,8 @@ export interface Product {
   image_url: string;
   category: string;
   stock_quantity: number;
-  size_s_quantity?: number;
-  size_m_quantity?: number;
-  size_l_quantity?: number;
-  size_xl_quantity?: number;
   created_at: string;
+  variants?: ProductVariant[];
 }
 
 export interface User {
