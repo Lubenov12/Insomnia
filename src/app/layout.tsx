@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./Navbar";
 import PageTransition from "./components/PageTransition";
+import { ProductProvider } from "@/contexts/ProductContext";
 
 // Optimize font loading with display swap and preload
 const inter = Inter({
@@ -88,7 +89,9 @@ export default function RootLayout({
       <body className="antialiased bg-white text-black">
         <PageTransition />
         <Navbar />
-        <main>{children}</main>
+        <ProductProvider>
+          <main>{children}</main>
+        </ProductProvider>
       </body>
     </html>
   );

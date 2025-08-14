@@ -336,12 +336,85 @@ export default function Hero() {
                   isTextVisible ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <div className="flex flex-col items-center text-white/70 hover:text-white transition-colors duration-300 cursor-pointer">
-                  <span className="text-sm font-medium mb-2 tracking-wider">
+                <button
+                  onClick={() => {
+                    const nextSection =
+                      document.querySelector("section:nth-of-type(2)") ||
+                      document.querySelector("main") ||
+                      document.querySelector(".product-section") ||
+                      document.querySelector('[data-section="products"]');
+                    if (nextSection) {
+                      // Custom smooth scroll with slower animation
+                      const targetPosition = nextSection.offsetTop;
+                      const startPosition = window.pageYOffset;
+                      const distance = targetPosition - startPosition;
+                      const duration = 1700; // 1.7 seconds for balanced animation
+                      let start = null;
+
+                      function animation(currentTime) {
+                        if (start === null) start = currentTime;
+                        const timeElapsed = currentTime - start;
+                        const run = easeInOutCubic(
+                          timeElapsed,
+                          startPosition,
+                          distance,
+                          duration
+                        );
+                        window.scrollTo(0, run);
+                        if (timeElapsed < duration)
+                          requestAnimationFrame(animation);
+                      }
+
+                      // Easing function for smooth animation
+                      function easeInOutCubic(t, b, c, d) {
+                        t /= d / 2;
+                        if (t < 1) return (c / 2) * t * t * t + b;
+                        t -= 2;
+                        return (c / 2) * (t * t * t + 2) + b;
+                      }
+
+                      requestAnimationFrame(animation);
+                    } else {
+                      // Fallback: scroll down by viewport height with slower animation
+                      const startPosition = window.pageYOffset;
+                      const targetPosition = startPosition + window.innerHeight;
+                      const distance = window.innerHeight;
+                      const duration = 1700; // 1.7 seconds for balanced animation
+                      let start = null;
+
+                      function animation(currentTime) {
+                        if (start === null) start = currentTime;
+                        const timeElapsed = currentTime - start;
+                        const run = easeInOutCubic(
+                          timeElapsed,
+                          startPosition,
+                          distance,
+                          duration
+                        );
+                        window.scrollTo(0, run);
+                        if (timeElapsed < duration)
+                          requestAnimationFrame(animation);
+                      }
+
+                      // Easing function for smooth animation
+                      function easeInOutCubic(t, b, c, d) {
+                        t /= d / 2;
+                        if (t < 1) return (c / 2) * t * t * t + b;
+                        t -= 2;
+                        return (c / 2) * (t * t * t + 2) + b;
+                      }
+
+                      requestAnimationFrame(animation);
+                    }
+                  }}
+                  className="flex flex-col items-center text-white/70 hover:text-white transition-colors duration-300 cursor-pointer group"
+                  aria-label="Scroll to next section"
+                >
+                  <span className="text-sm font-medium mb-2 tracking-wider group-hover:scale-105 transition-transform duration-300">
                     SCROLL
                   </span>
-                  <div className="w-px h-8 bg-white/50 animate-pulse-light"></div>
-                </div>
+                  <div className="w-px h-8 bg-white/50 group-hover:bg-white transition-colors duration-300 animate-pulse-light"></div>
+                </button>
               </div>
             </div>
           </div>

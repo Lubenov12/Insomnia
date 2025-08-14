@@ -27,31 +27,7 @@ const LogoIcon = memo(() => (
 
 LogoIcon.displayName = "LogoIcon";
 
-const MoonIcon = memo(() => (
-  <svg
-    className="text-white w-6 h-6"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    style={{ position: "relative", zIndex: 1 }}
-  >
-    <path
-      stroke="currentColor"
-      strokeWidth="2"
-      d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"
-      className="transition-all duration-300"
-      style={{ zIndex: 2 }}
-    />
-    <path
-      d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"
-      fill="#fff"
-      className="group-hover:opacity-100 opacity-0 transition-opacity duration-300"
-      style={{ zIndex: 1 }}
-    />
-  </svg>
-));
-
-MoonIcon.displayName = "MoonIcon";
+// Night mode icon removed
 
 const EyeIcon = memo(() => (
   <svg
@@ -216,17 +192,8 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Right: Insomnia Themed Icon Buttons */}
+          {/* Right: Icon Buttons (night mode removed) */}
           <div className="hidden md:flex items-center space-x-4">
-            <button
-              className="relative group p-2 cursor-pointer"
-              aria-label="Нощен режим"
-            >
-              <MoonIcon />
-              <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                Нощен режим
-              </span>
-            </button>
             <button
               className="relative group p-2 cursor-pointer"
               aria-label="Профил"
@@ -281,13 +248,6 @@ export default function Navbar() {
             Дрехи
           </a>
           <div className="w-full flex flex-col items-center space-y-4">
-            <button
-              className="flex items-center w-full p-2 cursor-pointer"
-              aria-label="Нощен режим"
-            >
-              <MoonIcon />
-              <span className="text-base text-white ml-3">Нощен режим</span>
-            </button>
             <button
               className="flex items-center w-full p-2 cursor-pointer"
               aria-label="Профил"

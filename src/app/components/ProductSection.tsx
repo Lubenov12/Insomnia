@@ -1,231 +1,37 @@
 "use client";
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  useRef,
-  Suspense,
-} from "react";
+import React, { useEffect, useCallback, Suspense, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useProducts } from "@/contexts/ProductContext";
+import { ProductGridSkeleton } from "@/components/ProductSkeleton";
 
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string;
-  category?: string;
-  stock_quantity?: number;
-};
+// Use the context hook
+const useProductData = () => {
+  const { state, fetchProducts, isLoading, error } = useProducts();
 
-type PaginationInfo = {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-};
-
-type CacheData = {
-  products: Product[];
-  pagination: PaginationInfo;
-  filters: {
-    category: string | null;
-    search: string | null;
-  };
-};
-
-// Cache for storing fetched data
-const productCache = new Map<string, { data: CacheData; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-// Pre-fetch products on mount for better performance
-const preloadProducts = async () => {
-  try {
-    const params = new URLSearchParams({
-      page: "1",
-      limit: "8",
-    });
-
-    const res = await fetch(`/api/products?${params}`, {
-      headers: {
-        "Cache-Control": "max-age=300",
-      },
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      const cacheKey = `home_products:1:8`;
-      productCache.set(cacheKey, {
-        data,
-        timestamp: Date.now(),
-      });
-      return data;
-    }
-  } catch (error) {
-    console.error("Preload failed:", error);
-  }
-  return null;
-};
-
-// Custom hook for optimized data fetching
-const useProducts = (page: number, limit: number = 8) => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true); // Start with loading true
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  const fetchProducts = useCallback(
-    async (pageNum: number, isInitial: boolean = false) => {
-      const cacheKey = `home_products:${pageNum}:${limit}`;
-      const cached = productCache.get(cacheKey);
-
-      // Check cache first
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        if (isInitial) {
-          setProducts(cached.data.products);
-          setPagination(cached.data.pagination);
-          setHasMore(
-            cached.data.pagination.page < cached.data.pagination.totalPages
-          );
-          setLoading(false);
-          setInitialLoadComplete(true);
-        } else {
-          setProducts((prev) => [...prev, ...cached.data.products]);
-          setPagination(cached.data.pagination);
-          setHasMore(
-            cached.data.pagination.page < cached.data.pagination.totalPages
-          );
-        }
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const params = new URLSearchParams({
-          page: pageNum.toString(),
-          limit: limit.toString(),
-        });
-
-        const res = await fetch(`/api/products?${params}`, {
-          // Add cache control headers
-          headers: {
-            "Cache-Control": "max-age=300",
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to fetch products: ${res.status}`);
-        }
-
-        const data = await res.json();
-
-        // Validate response data
-        if (!data.products || !Array.isArray(data.products)) {
-          throw new Error("Invalid response format from server");
-        }
-
-        // Cache the response
-        productCache.set(cacheKey, {
-          data,
-          timestamp: Date.now(),
-        });
-
-        if (isInitial) {
-          setProducts(data.products || []);
-          setInitialLoadComplete(true);
-        } else {
-          setProducts((prev) => [...prev, ...data.products]);
-        }
-
-        setPagination(data.pagination);
-        setHasMore(data.pagination.page < data.pagination.totalPages);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Грешка при зареждане на продуктите.";
-        setError(errorMessage);
-        console.error("Error fetching products:", err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [limit]
-  );
+  useEffect(() => {
+    fetchProducts(1, 8);
+  }, [fetchProducts]);
 
   const loadMore = useCallback(() => {
-    if (!loading && hasMore) {
-      fetchProducts(page + 1);
+    if (
+      !isLoading &&
+      state.pagination &&
+      state.pagination.page < state.pagination.totalPages
+    ) {
+      fetchProducts(state.pagination.page + 1, 8);
     }
-  }, [fetchProducts, page, loading, hasMore]);
-
-  // Ensure component is mounted before any API calls
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Initial load - trigger immediately and preload - only after mount
-  useEffect(() => {
-    if (!isMounted) return;
-
-    // Wait for document to be fully ready
-    const ensureReady = () => {
-      if (document.readyState === "complete") {
-        // Start preloading immediately
-        preloadProducts();
-
-        // Start fetching immediately
-        fetchProducts(1, true);
-      } else {
-        // Wait for page to be fully loaded
-        window.addEventListener(
-          "load",
-          () => {
-            setTimeout(() => {
-              preloadProducts();
-              fetchProducts(1, true);
-            }, 50);
-          },
-          { once: true }
-        );
-      }
-    };
-
-    // Small delay to ensure hydration is complete
-    const initTimer = setTimeout(ensureReady, 150);
-
-    return () => clearTimeout(initTimer);
-  }, [fetchProducts, isMounted]);
-
-  // Retry mechanism for failed initial loads
-  useEffect(() => {
-    if (!isMounted) return;
-
-    if (!initialLoadComplete && !loading && error) {
-      const retryTimer = setTimeout(() => {
-        console.log("Retrying product fetch...");
-        fetchProducts(1, true);
-      }, 2000);
-
-      return () => clearTimeout(retryTimer);
-    }
-  }, [initialLoadComplete, loading, error, fetchProducts, isMounted]);
+  }, [fetchProducts, isLoading, state.pagination]);
 
   return {
-    products,
-    loading,
+    products: state.products,
+    loading: isLoading,
     error,
-    pagination,
-    hasMore,
+    pagination: state.pagination,
+    hasMore: state.pagination
+      ? state.pagination.page < state.pagination.totalPages
+      : false,
     loadMore,
-    refetch: () => fetchProducts(1, true),
-    initialLoadComplete,
-    isMounted,
   };
 };
 
@@ -237,7 +43,13 @@ const ProductCard = React.memo(
     onMouseEnter,
     onMouseLeave,
   }: {
-    product: Product;
+    product: {
+      id: string;
+      name: string;
+      price: number;
+      image_url: string;
+      category?: string;
+    };
     isHovered: boolean;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
@@ -298,42 +110,14 @@ const ProductCard = React.memo(
 
 ProductCard.displayName = "ProductCard";
 
-// Loading Skeleton Component with optimized animations
-const ProductSkeleton = () => (
-  <div className="bg-gray-900 rounded-xl overflow-hidden animate-pulse-light border border-gray-700">
-    <div className="w-full aspect-square bg-gray-800"></div>
-    <div className="p-4">
-      <div className="h-4 bg-gray-800 rounded mb-2"></div>
-      <div className="h-6 bg-gray-800 rounded w-1/2"></div>
-    </div>
-  </div>
-);
-
-// Loading Grid Component
-const LoadingGrid = () => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
-    {Array.from({ length: 8 }).map((_, index) => (
-      <ProductSkeleton key={index} />
-    ))}
-  </div>
-);
+// Loading Grid Component - now using the skeleton component
+const LoadingGrid = () => <ProductGridSkeleton count={8} />;
 
 // Main Products Component
 const ProductsGrid = () => {
   const [hovered, setHovered] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
 
-  const {
-    products,
-    loading,
-    error,
-    pagination,
-    hasMore,
-    loadMore,
-    refetch,
-    initialLoadComplete,
-    isMounted,
-  } = useProducts(page, 8);
+  const { products, loading, error, hasMore, loadMore } = useProductData();
 
   // Memoized event handlers
   const handleMouseEnter = useCallback((productId: string) => {
@@ -345,30 +129,13 @@ const ProductsGrid = () => {
   }, []);
 
   const handleLoadMore = useCallback(() => {
-    setPage((prev) => prev + 1);
     loadMore();
   }, [loadMore]);
 
-  // Clear cache on component unmount
-  useEffect(() => {
-    return () => {
-      // Keep cache for 5 minutes, then clear old entries
-      const now = Date.now();
-      for (const [key, value] of productCache.entries()) {
-        if (now - value.timestamp > CACHE_DURATION) {
-          productCache.delete(key);
-        }
-      }
-    };
-  }, []);
-
-  // Don't render anything until mounted to prevent hydration issues
-  if (!isMounted) {
-    return <LoadingGrid />;
-  }
+  // Cache management is now handled by the context
 
   // Show loading state for initial load
-  if (loading && !initialLoadComplete) {
+  if (loading && products.length === 0) {
     return <LoadingGrid />;
   }
 
@@ -377,7 +144,7 @@ const ProductsGrid = () => {
       <div className="text-center py-8">
         <div className="text-red-400 mb-4">{error}</div>
         <button
-          onClick={refetch}
+          onClick={() => window.location.reload()}
           className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
         >
           Опитай отново
