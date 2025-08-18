@@ -75,7 +75,7 @@ type ProductAction =
   | { type: "HYDRATE_FROM_STORAGE"; payload: Partial<ProductState> };
 
 // Constants
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes for faster updates
 const STORAGE_KEY = "insomnia_products_cache";
 
 // Initial state
@@ -211,18 +211,23 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state]);
 
-  // Optimized product fetching with batching
+  // Fast product fetching - prioritize fresh data
   const fetchProducts = useCallback(
     async (
       page: number = 1,
       limit: number = 8,
       filters: ProductFilters = {}
     ) => {
-      // Don't fetch if we have valid cache and same filters
+      // Always fetch fresh data for initial load or when filters change
       if (
+        page === 1 ||
+        state.products.length === 0 ||
+        JSON.stringify(state.filters) !== JSON.stringify(filters)
+      ) {
+        // Fetch fresh data
+      } else if (
         isCacheValid &&
-        state.products.length > 0 &&
-        JSON.stringify(state.filters) === JSON.stringify(filters)
+        state.products.length > 0
       ) {
         return;
       }

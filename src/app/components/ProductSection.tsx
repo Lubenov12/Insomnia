@@ -87,7 +87,7 @@ const ProductCard = React.memo(
       </div>
 
       <Link
-        href={`/product/${product.id}`}
+        href={`/product/${product.id.substring(0, 8)}`}
         className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{ pointerEvents: "auto" }}
       >
@@ -134,7 +134,7 @@ const ProductsGrid = () => {
 
   // Cache management is now handled by the context
 
-  // Show loading state for initial load
+  // Show loading state for initial load - simplified for speed
   if (loading && products.length === 0) {
     return <LoadingGrid />;
   }

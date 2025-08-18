@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function AuthCallback() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -16,15 +16,34 @@ export default function AuthCallback() {
         const code = searchParams.get("code");
         const error = searchParams.get("error");
         const errorDescription = searchParams.get("error_description");
+        const errorCode = searchParams.get("error_code");
 
         if (error) {
-          setError(errorDescription || "Authentication failed");
+          // Handle specific error cases
+          let userFriendlyError = "Възникна грешка при потвърждение на акаунта";
+
+          if (error === "access_denied") {
+            if (errorCode === "otp_expired") {
+              userFriendlyError =
+                "Връзката за потвърждение е изтекла. Моля поискайте нова връзка за потвърждение.";
+            } else {
+              userFriendlyError =
+                "Достъпът е отказан. Моля опитайте отново или поискайте нова връзка за потвърждение.";
+            }
+          } else if (error === "invalid_request") {
+            userFriendlyError =
+              "Невалидна заявка за потвърждение. Моля поискайте нова връзка за потвърждение.";
+          } else if (errorDescription) {
+            userFriendlyError = `Грешка: ${errorDescription}`;
+          }
+
+          setError(userFriendlyError);
           setLoading(false);
           return;
         }
 
         if (!code) {
-          setError("No authorization code received");
+          setError("Не е получен код за потвърждение. Моля опитайте отново.");
           setLoading(false);
           return;
         }
@@ -35,13 +54,27 @@ export default function AuthCallback() {
 
         if (exchangeError) {
           console.error("Auth callback error:", exchangeError);
-          setError("Failed to complete authentication");
+
+          let userFriendlyError =
+            "Не можа да се завърши потвърждението на акаунта";
+
+          if (exchangeError.message.includes("expired")) {
+            userFriendlyError =
+              "Връзката за потвърждение е изтекла. Моля поискайте нова.";
+          } else if (exchangeError.message.includes("invalid")) {
+            userFriendlyError =
+              "Невалидна връзка за потвърждение. Моля поискайте нова.";
+          } else if (exchangeError.message.includes("already")) {
+            userFriendlyError = "Акаунтът вече е потвърден. Можете да влезете.";
+          }
+
+          setError(userFriendlyError);
           setLoading(false);
           return;
         }
 
         if (!data.user) {
-          setError("No user data received");
+          setError("Не са получени потребителски данни. Моля опитайте отново.");
           setLoading(false);
           return;
         }
@@ -89,11 +122,11 @@ export default function AuthCallback() {
         );
         localStorage.setItem("session", JSON.stringify(data.session));
 
-        // Redirect to home page
-        router.push("/");
+        // Success! Show success message and redirect
+        router.push("/?verified=true");
       } catch (err) {
         console.error("Auth callback error:", err);
-        setError("An unexpected error occurred");
+        setError("Възникна неочаквана грешка. Моля опитайте отново.");
         setLoading(false);
       }
     };
@@ -106,7 +139,8 @@ export default function AuthCallback() {
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center text-white">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-          <div className="text-lg">Завършване на влизането...</div>
+          <div className="text-lg">Потвърждаване на акаунта...</div>
+          <div className="text-sm text-gray-400 mt-2">Моля изчакайте...</div>
         </div>
       </div>
     );
@@ -129,18 +163,53 @@ export default function AuthCallback() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-4">Грешка при влизане</h1>
+          <h1 className="text-2xl font-bold mb-4">Грешка при потвърждение</h1>
           <p className="text-gray-300 mb-6">{error}</p>
-          <button
-            onClick={() => router.push("/login")}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Обратно към влизане
-          </button>
+          <div className="space-y-3">
+            {(error.includes("изтекла") ||
+              error.includes("expired") ||
+              error.includes("invalid")) && (
+              <button
+                onClick={() => router.push("/verify-email")}
+                className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Поискай нова връзка за потвърждение
+              </button>
+            )}
+            <button
+              onClick={() => router.push("/login")}
+              className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Обратно към влизане
+            </button>
+            <button
+              onClick={() => router.push("/")}
+              className="w-full px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+            >
+              Към началната страница
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return null;
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="text-white text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p>Обработка на автентикация...</p>
+          </div>
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
+  );
 }

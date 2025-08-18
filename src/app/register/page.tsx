@@ -4,6 +4,179 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Footer from "../components/Footer";
 
+// Error message mapping for user-friendly feedback
+const getErrorMessage = (error: string): string => {
+  const errorMappings: { [key: string]: string } = {
+    // Validation errors
+    "Name must be at least 2 characters": "Моля въведете име с поне 2 символа",
+    "Name can only contain letters, spaces, hyphens, apostrophes, and dots":
+      "Името може да съдържа само букви, интервали, тирета, апострофи и точки",
+    "Invalid email format": "Моля въведете валиден email адрес",
+    "Invalid phone number format":
+      "Моля въведете валиден телефонен номер в международен формат",
+    "Password must be at least 8 characters":
+      "Паролата трябва да има поне 8 символа",
+    "Password must contain at least one uppercase letter":
+      "Паролата трябва да съдържа поне една главна буква",
+    "Password must contain at least one lowercase letter":
+      "Паролата трябва да съдържа поне една малка буква",
+    "Password must contain at least one number":
+      "Паролата трябва да съдържа поне една цифра",
+    "Password must contain at least one special character":
+      "Паролата трябва да съдържа поне един специален символ",
+    "Passwords don't match": "Паролите не съвпадат",
+    "You must accept the terms and conditions":
+      "Трябва да приемете общите условия",
+    "You must accept the privacy policy":
+      "Трябва да приемете политиката за поверителност",
+    "Either email or phone number is required":
+      "Моля въведете email адрес или телефонен номер",
+
+    // API errors
+    "User with this email or phone number already exists":
+      "Потребител с този email адрес или телефонен номер вече съществува",
+    "Password does not meet requirements":
+      "Паролата не отговаря на изискванията за сигурност",
+    "Database error while checking email":
+      "Възникна грешка при проверка на email адреса. Моля опитайте отново",
+    "Database error while checking phone number":
+      "Възникна грешка при проверка на телефонния номер. Моля опитайте отново",
+    "Registration failed": "Регистрацията неуспешна. Моля опитайте отново",
+    "Failed to fetch user profile":
+      "Не можа да се намери потребителския профил. Моля опитайте отново или се свържете с поддръжката",
+    "User profile not found":
+      "Потребителският профил не е намерен. Моля опитайте отново регистрацията",
+    "new row violates row-level security policy":
+      "Възникна грешка с правата за достъп. Моля опитайте отново или се свържете с поддръжката",
+    "row-level security policy":
+      "Възникна грешка с базата данни. Моля опитайте отново",
+    "Internal server error during registration":
+      "Възникна техническа грешка. Моля опитайте отново след малко",
+    "Invalid JSON in request body":
+      "Възникна грешка при обработка на данните. Моля опитайте отново",
+    "Validation failed": "Моля проверете въведените данни и опитайте отново",
+
+    // Network/connection errors
+    "Failed to fetch":
+      "Няма връзка със сървъра. Моля проверете интернет връзката си",
+    NetworkError: "Грешка в мрежата. Моля проверете интернет връзката си",
+    TypeError: "Възникна техническа грешка. Моля опитайте отново",
+  };
+
+  // Check for direct matches first
+  if (errorMappings[error]) {
+    return errorMappings[error];
+  }
+
+  // Check for partial matches in error message
+  for (const [key, value] of Object.entries(errorMappings)) {
+    if (error.includes(key)) {
+      return value;
+    }
+  }
+
+  // Handle validation errors with field details
+  if (error.includes("Validation failed") || error.includes("details")) {
+    return "Моля проверете въведените данни. Има грешки в някои полета.";
+  }
+
+  // Handle "already exists" errors
+  if (
+    error.toLowerCase().includes("already exists") ||
+    error.toLowerCase().includes("already registered")
+  ) {
+    return "Потребител с тези данни вече съществува. Моля опитайте с различни данни или влезте в съществуващия си акаунт.";
+  }
+
+  // Handle password related errors
+  if (error.toLowerCase().includes("password")) {
+    return "Възникна проблем с паролата. Моля проверете дали отговаря на всички изисквания.";
+  }
+
+  // Handle email related errors
+  if (error.toLowerCase().includes("email")) {
+    return "Възникна проблем с email адреса. Моля проверете дали е въведен правилно.";
+  }
+
+  // Default fallback message
+  return "Възникна неочаквана грешка. Моля опитайте отново или се свържете с поддръжката.";
+};
+
+// Password requirement validation functions
+const passwordRequirements = {
+  minLength: (password: string) => password.length >= 8,
+  hasUppercase: (password: string) => /[A-Z]/.test(password),
+  hasLowercase: (password: string) => /[a-z]/.test(password),
+  hasNumber: (password: string) => /\d/.test(password),
+  hasSpecialChar: (password: string) => /[!@#$%^&*(),.?":{}|<>]/.test(password),
+};
+
+const passwordRequirementLabels = {
+  minLength: "Минимум 8 символа",
+  hasUppercase: "Поне една главна буква (A-Z)",
+  hasLowercase: "Поне една малка буква (a-z)",
+  hasNumber: "Поне една цифра (0-9)",
+  hasSpecialChar: "Поне един специален символ (!@#$%^&*)",
+};
+
+// Password Requirements Component
+const PasswordRequirements = ({ password }: { password: string }) => {
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="text-sm text-gray-300 mb-2">Паролата трябва да съдържа:</p>
+      {Object.entries(passwordRequirements).map(([key, validator]) => {
+        const isValid = validator(password);
+        return (
+          <div key={key} className="flex items-center space-x-2">
+            <div
+              className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                isValid ? "bg-green-500 text-white" : "bg-red-500 text-white"
+              }`}
+            >
+              {isValid ? (
+                <svg
+                  className="w-3 h-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-3 h-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+            </div>
+            <span
+              className={`text-sm ${
+                isValid ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {
+                passwordRequirementLabels[
+                  key as keyof typeof passwordRequirementLabels
+                ]
+              }
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export default function RegisterPage() {
   const router = useRouter();
   const [registrationType, setRegistrationType] = useState<"email" | "phone">(
@@ -23,6 +196,8 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -46,6 +221,22 @@ export default function RegisterPage() {
     }
   };
 
+  // Toggle password visibility functions
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  // Validate password requirements
+  const validatePassword = (password: string) => {
+    return Object.values(passwordRequirements).every((validator) =>
+      validator(password)
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -54,13 +245,27 @@ export default function RegisterPage() {
 
     // Validate that the selected field is filled
     if (registrationType === "email" && !formData.email) {
-      setError("Моля въведете email адрес");
+      setError(getErrorMessage("Either email or phone number is required"));
       setLoading(false);
       return;
     }
 
     if (registrationType === "phone" && !formData.phone_number) {
-      setError("Моля въведете телефонен номер");
+      setError(getErrorMessage("Either email or phone number is required"));
+      setLoading(false);
+      return;
+    }
+
+    // Validate password requirements
+    if (!validatePassword(formData.password)) {
+      setError(getErrorMessage("Password does not meet requirements"));
+      setLoading(false);
+      return;
+    }
+
+    // Validate password confirmation
+    if (formData.password !== formData.confirmPassword) {
+      setError(getErrorMessage("Passwords don't match"));
       setLoading(false);
       return;
     }
@@ -84,6 +289,14 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle validation errors with field details
+        if (data.details && Array.isArray(data.details)) {
+          const fieldErrors = data.details
+            .map((detail: { message: string }) => detail.message)
+            .join(". ");
+          throw new Error(fieldErrors);
+        }
+
         throw new Error(data.error || "Registration failed");
       }
 
@@ -103,7 +316,9 @@ export default function RegisterPage() {
         );
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      const errorMessage =
+        err instanceof Error ? err.message : "Registration failed";
+      setError(getErrorMessage(errorMessage));
     } finally {
       setLoading(false);
     }
@@ -260,7 +475,10 @@ export default function RegisterPage() {
                   Парола
                 </h3>
 
-                <div className="space-y-4">
+                {/* Password Requirements - moved above password inputs */}
+                <PasswordRequirements password={formData.password} />
+
+                <div className="space-y-4 mt-4">
                   <div>
                     <label
                       htmlFor="password"
@@ -268,20 +486,59 @@ export default function RegisterPage() {
                     >
                       Парола *
                     </label>
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      required
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                      placeholder="Въведете парола"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Минимум 8 символа, главна буква, малка буква, цифра и
-                      специален символ
-                    </p>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                        placeholder="Въведете парола"
+                      />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
+                      >
+                        {showPassword ? (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L12 12m-2.122-2.122L7.76 7.76m6.362 6.362L17.24 17.24m0 0L20.49 20.49M17.24 17.24l-3.12-3.12m-5.8-5.8l-3.12-3.12m0 0L2.51 2.51"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -291,16 +548,59 @@ export default function RegisterPage() {
                     >
                       Потвърди парола *
                     </label>
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      required
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                      placeholder="Потвърдете парола"
-                    />
+                    <div className="relative">
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        required
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                        placeholder="Потвърдете парола"
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleConfirmPasswordVisibility}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
+                      >
+                        {showConfirmPassword ? (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L12 12m-2.122-2.122L7.76 7.76m6.362 6.362L17.24 17.24m0 0L20.49 20.49M17.24 17.24l-3.12-3.12m-5.8-5.8l-3.12-3.12m0 0L2.51 2.51"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -320,7 +620,7 @@ export default function RegisterPage() {
                         type="checkbox"
                         checked={formData.marketing_emails}
                         onChange={handleInputChange}
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800"
+                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 cursor-pointer"
                       />
                       <label
                         htmlFor="marketing_emails"
@@ -348,7 +648,7 @@ export default function RegisterPage() {
                       required
                       checked={formData.accept_terms}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 mt-1"
+                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 mt-1 cursor-pointer"
                     />
                     <label
                       htmlFor="accept_terms"
@@ -373,7 +673,7 @@ export default function RegisterPage() {
                       required
                       checked={formData.accept_privacy}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 mt-1"
+                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 mt-1 cursor-pointer"
                     />
                     <label
                       htmlFor="accept_privacy"

@@ -69,10 +69,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         items: cartItems || [],
         total:
-          cartItems?.reduce(
-            (sum, item) => sum + (item.products?.price || 0) * item.quantity,
-            0
-          ) || 0,
+          cartItems?.reduce((sum, item) => {
+            const product = Array.isArray(item.products)
+              ? item.products[0]
+              : item.products;
+            return (
+              sum + ((product as { price: number })?.price || 0) * item.quantity
+            );
+          }, 0) || 0,
         count: cartItems?.length || 0,
       });
     } else {

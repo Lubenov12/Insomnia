@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export function useNavigation() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [progress, setProgress] = useState(0);
   const pathname = usePathname();
-  const router = useRouter();
 
   const startNavigation = useCallback(() => {
     setIsNavigating(true);
@@ -24,8 +23,8 @@ export function useNavigation() {
 
     const handleRouteChange = () => {
       startNavigation();
-      // Simulate completion after a short delay
-      timeoutId = setTimeout(completeNavigation, 600);
+      // Simulate completion after a minimal delay
+      timeoutId = setTimeout(completeNavigation, 100);
     };
 
     // Trigger on pathname change

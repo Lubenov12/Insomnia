@@ -4,15 +4,36 @@ const nextConfig: NextConfig = {
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ["framer-motion", "@supabase/supabase-js"],
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
-      },
-    },
   },
+
+  // Webpack configuration to handle deprecation warnings
+  webpack: (config, { isServer }) => {
+    // Suppress punycode deprecation warnings
+    config.ignoreWarnings = [
+      { module: /node_modules\/punycode/ },
+      { message: /the request of a dependency is an expression/ },
+    ];
+
+    // Add fallbacks for Node.js modules
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        punycode: false,
+      };
+    }
+
+    return config;
+  },
+
+  // Turbopack configuration (stable) - disabled for now to fix SVG loading issues
+  // turbopack: {
+  //   rules: {
+  //     "*.svg": {
+  //       loaders: ["@svgr/webpack"],
+  //       as: "*.js",
+  //     },
+  //   },
+  // },
 
   // Image optimization
   images: {

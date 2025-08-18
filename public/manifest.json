@@ -1,0 +1,22 @@
+{
+  "name": "INSOMNIA",
+  "short_name": "INSOMNIA",
+  "description": "INSOMNIA - Unique Style & Fashion",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#9333ea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["shopping", "lifestyle", "fashion"],
+  "lang": "bg",
+  "scope": "/",
+  "related_applications": [],
+  "prefer_related_applications": false
+}

@@ -3,7 +3,6 @@ import React, {
   useEffect,
   useState,
   useCallback,
-  useMemo,
   useRef,
   Suspense,
 } from "react";
@@ -226,7 +225,7 @@ const ProductCard = React.memo(
       </div>
 
       <Link
-        href={`/product/${product.id}`}
+        href={`/product/${product.id.substring(0, 8)}`}
         className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
         style={{ pointerEvents: "auto" }}
       >

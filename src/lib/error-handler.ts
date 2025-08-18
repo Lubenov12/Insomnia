@@ -65,13 +65,11 @@ export function handleApiError(error: unknown): NextResponse {
 
   // Zod validation errors
   if (error instanceof ZodError) {
-    const formattedErrors = error.errors.map(
-      (err: { path: (string | number)[]; message: string; code: string }) => ({
-        field: err.path.join("."),
-        message: err.message,
-        code: err.code,
-      })
-    );
+    const formattedErrors = error.issues.map((err) => ({
+      field: err.path.join("."),
+      message: err.message,
+      code: err.code,
+    }));
 
     return NextResponse.json(
       {
@@ -153,8 +151,8 @@ export function handleApiError(error: unknown): NextResponse {
   }
 
   // Supabase specific errors
-  if (error?.code) {
-    switch (error.code) {
+  if (error && typeof error === "object" && "code" in error) {
+    switch ((error as { code: string }).code) {
       case "PGRST116":
         return NextResponse.json(
           {
@@ -201,7 +199,7 @@ export function handleApiError(error: unknown): NextResponse {
             code: error.code,
             details:
               process.env.NODE_ENV === "development"
-                ? error.message
+                ? (error as { message?: string }).message
                 : undefined,
           },
           { status: 500 }
@@ -215,7 +213,9 @@ export function handleApiError(error: unknown): NextResponse {
       error: "Internal server error",
       code: "INTERNAL_ERROR",
       details:
-        process.env.NODE_ENV === "development" ? error.message : undefined,
+        process.env.NODE_ENV === "development"
+          ? (error as { message?: string })?.message
+          : undefined,
     },
     { status: 500 }
   );

@@ -3,13 +3,13 @@ import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 
 // Orders API endpoint - placeholder for future implementation
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // TODO: Implement orders retrieval
     return NextResponse.json({
       message: "Orders endpoint - coming soon",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Orders retrieval error" },
       { status: 500 }

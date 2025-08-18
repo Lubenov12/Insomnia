@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import {
-  productSchema,
-  searchSchema,
-  paginationSchema,
-} from "@/lib/validations";
+import { productSchema, searchSchema } from "@/lib/validations";
 import { getAuthUser } from "@/lib/auth";
 import {
   handleApiError,
   validatePagination,
   sanitizeInput,
   DatabaseError,
-  NotFoundError,
   AuthenticationError,
   ValidationError,
   ConflictError,

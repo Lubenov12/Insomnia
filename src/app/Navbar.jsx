@@ -1,8 +1,9 @@
 "use client";
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, memo, useEffect } from "react";
 import { Oswald } from "next/font/google";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 const oswald = Oswald({
   subsets: ["latin"],
@@ -149,9 +150,138 @@ const HamburgerIcon = memo(({ isOpen }) => (
 
 HamburgerIcon.displayName = "HamburgerIcon";
 
+const UserIcon = memo(() => (
+  <svg
+    className="text-white w-6 h-6"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    style={{ position: "relative", zIndex: 1 }}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      className="transition-all duration-300"
+      style={{ zIndex: 2 }}
+    />
+    <path
+      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      fill="#ffffff"
+      className="group-hover:opacity-100 opacity-0 transition-opacity duration-300"
+      style={{ zIndex: 1 }}
+    />
+  </svg>
+));
+
+UserIcon.displayName = "UserIcon";
+
+const LogoutIcon = memo(() => (
+  <svg
+    className="text-white w-6 h-6"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    style={{ position: "relative", zIndex: 1 }}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+      className="transition-all duration-300"
+      style={{ zIndex: 2 }}
+    />
+  </svg>
+));
+
+LogoutIcon.displayName = "LogoutIcon";
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // Check authentication status
+  useEffect(() => {
+    // Check for existing session
+    const checkAuth = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          // Fetch user profile
+          const { data: userProfile } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+
+          setUser(
+            userProfile || {
+              id: session.user.id,
+              name: session.user.email?.split("@")[0] || "User",
+              email: session.user.email,
+            }
+          );
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        // Fetch user profile
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+
+        setUser(
+          userProfile || {
+            id: session.user.id,
+            name: session.user.email?.split("@")[0] || "User",
+            email: session.user.email,
+          }
+        );
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Logout function
+  const handleLogout = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      // Clear local storage
+      localStorage.removeItem("user");
+      localStorage.removeItem("session");
+      localStorage.removeItem("pendingEmail");
+      // Redirect to home
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  }, [router]);
 
   // Memoized event handlers
   const handleMobileToggle = useCallback(() => {
@@ -159,8 +289,13 @@ export default function Navbar() {
   }, []);
 
   const handleProfileClick = useCallback(() => {
-    router.push("/login");
-  }, [router]);
+    if (user) {
+      // If logged in, could go to profile page (for now just show user is logged in)
+      return;
+    } else {
+      router.push("/login");
+    }
+  }, [router, user]);
 
   const handleCartClick = useCallback(() => {
     router.push("/cart");
@@ -192,37 +327,74 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Right: Icon Buttons (night mode removed) */}
+          {/* Right: Icon Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <button
-              className="relative group p-2 cursor-pointer"
-              aria-label="Профил"
-              onClick={handleProfileClick}
-            >
-              <EyeIcon />
-              <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                Профил
-              </span>
-            </button>
-            <button
-              className="relative group p-2 cursor-pointer"
-              aria-label="Любими"
-            >
-              <HeartIcon />
-              <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                Любими
-              </span>
-            </button>
-            <button
-              className="relative group p-2 cursor-pointer"
-              aria-label="Количка"
-              onClick={handleCartClick}
-            >
-              <CartIcon />
-              <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                Количка
-              </span>
-            </button>
+            {loading ? (
+              <div className="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            ) : user ? (
+              // Logged in state
+              <>
+                <div className="flex items-center space-x-2 mr-4">
+                  <UserIcon />
+                  <span className="text-sm font-medium">
+                    Здравей, {user.name}!
+                  </span>
+                </div>
+                <button
+                  className="relative group p-2 cursor-pointer"
+                  aria-label="Любими"
+                >
+                  <HeartIcon />
+                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                    Любими
+                  </span>
+                </button>
+                <button
+                  className="relative group p-2 cursor-pointer"
+                  aria-label="Количка"
+                  onClick={handleCartClick}
+                >
+                  <CartIcon />
+                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                    Количка
+                  </span>
+                </button>
+                <button
+                  className="relative group p-2 cursor-pointer"
+                  aria-label="Излизане"
+                  onClick={handleLogout}
+                >
+                  <LogoutIcon />
+                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                    Излизане
+                  </span>
+                </button>
+              </>
+            ) : (
+              // Logged out state
+              <>
+                <button
+                  className="relative group p-2 cursor-pointer"
+                  aria-label="Влизане"
+                  onClick={handleProfileClick}
+                >
+                  <EyeIcon />
+                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                    Влизане
+                  </span>
+                </button>
+                <button
+                  className="relative group p-2 cursor-pointer"
+                  aria-label="Количка"
+                  onClick={handleCartClick}
+                >
+                  <CartIcon />
+                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                    Количка
+                  </span>
+                </button>
+              </>
+            )}
           </div>
 
           {/* Mobile Hamburger */}
@@ -241,37 +413,69 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden bg-black px-4 pt-4 pb-6 flex flex-col items-center space-y-6">
-          <a
-            href="#"
+          <Link
+            href="/clothes"
             className="px-3 py-2 rounded-md text-lg font-bold hover:text-gray-300 transition-colors text-center w-full mb-2"
           >
             Дрехи
-          </a>
-          <div className="w-full flex flex-col items-center space-y-4">
-            <button
-              className="flex items-center w-full p-2 cursor-pointer"
-              aria-label="Профил"
-              onClick={handleProfileClick}
-            >
-              <EyeIcon />
-              <span className="text-base text-white ml-3">Профил</span>
-            </button>
-            <button
-              className="flex items-center w-full p-2 cursor-pointer"
-              aria-label="Любими"
-            >
-              <HeartIcon />
-              <span className="text-base text-white ml-3">Любими</span>
-            </button>
-            <button
-              className="flex items-center w-full p-2 cursor-pointer"
-              aria-label="Количка"
-              onClick={handleCartClick}
-            >
-              <CartIcon />
-              <span className="text-base text-white ml-3">Количка</span>
-            </button>
-          </div>
+          </Link>
+
+          {loading ? (
+            <div className="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+          ) : user ? (
+            // Logged in mobile menu
+            <div className="w-full flex flex-col items-center space-y-4">
+              <div className="flex items-center justify-center w-full p-2 mb-2">
+                <UserIcon />
+                <span className="text-base text-white ml-3">
+                  Здравей, {user.name}!
+                </span>
+              </div>
+              <button
+                className="flex items-center w-full p-2 cursor-pointer"
+                aria-label="Любими"
+              >
+                <HeartIcon />
+                <span className="text-base text-white ml-3">Любими</span>
+              </button>
+              <button
+                className="flex items-center w-full p-2 cursor-pointer"
+                aria-label="Количка"
+                onClick={handleCartClick}
+              >
+                <CartIcon />
+                <span className="text-base text-white ml-3">Количка</span>
+              </button>
+              <button
+                className="flex items-center w-full p-2 cursor-pointer border-t border-gray-600 pt-4"
+                aria-label="Излизане"
+                onClick={handleLogout}
+              >
+                <LogoutIcon />
+                <span className="text-base text-white ml-3">Излизане</span>
+              </button>
+            </div>
+          ) : (
+            // Logged out mobile menu
+            <div className="w-full flex flex-col items-center space-y-4">
+              <button
+                className="flex items-center w-full p-2 cursor-pointer"
+                aria-label="Влизане"
+                onClick={handleProfileClick}
+              >
+                <EyeIcon />
+                <span className="text-base text-white ml-3">Влизане</span>
+              </button>
+              <button
+                className="flex items-center w-full p-2 cursor-pointer"
+                aria-label="Количка"
+                onClick={handleCartClick}
+              >
+                <CartIcon />
+                <span className="text-base text-white ml-3">Количка</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </nav>

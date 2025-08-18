@@ -1,217 +1,60 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function Hero() {
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const [videoError, setVideoError] = useState(false);
+  const searchParams = useSearchParams();
+  const [showVerificationSuccess, setShowVerificationSuccess] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isTextVisible, setIsTextVisible] = useState(false);
-  const [loadingAttempts, setLoadingAttempts] = useState(0);
-  const [isMounted, setIsMounted] = useState(false);
   const videoRef = useRef(null);
   const backgroundVideoRef = useRef(null);
 
-  // Ensure component is mounted before any DOM operations
+  // Check for verification success
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (searchParams.get("verified") === "true") {
+      setShowVerificationSuccess(true);
+      // Auto-hide after 10 seconds
+      const timer = setTimeout(() => {
+        setShowVerificationSuccess(false);
+      }, 10000);
 
-  // Preload video immediately with multiple strategies - only after mount
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+    // Simple and fast animation timing
   useEffect(() => {
-    if (!isMounted) return;
+    // Immediate visibility
+    setIsVisible(true);
+    // Text animation slightly delayed
+    const textTimer = setTimeout(() => setIsTextVisible(true), 300);
 
-    // Wait for document to be fully ready
-    const ensureReady = () => {
-      if (document.readyState === "complete") {
-        const preloadVideo = () => {
-          // Strategy 1: Create a new video element to preload
-          const preloadVideo = document.createElement("video");
-          preloadVideo.src = "/img/Hard.mp4";
-          preloadVideo.preload = "auto";
-          preloadVideo.muted = true;
-          preloadVideo.load();
-
-          // Strategy 2: Use fetch to preload the video file
-          fetch("/img/Hard.mp4", { method: "HEAD" })
-            .then(() => console.log("Video preloaded via fetch"))
-            .catch((err) => console.log("Fetch preload failed:", err));
-        };
-
-        // Start preloading immediately
-        preloadVideo();
-      } else {
-        // Wait for page to be fully loaded
-        window.addEventListener(
-          "load",
-          () => {
-            setTimeout(() => {
-              const preloadVideo = () => {
-                // Strategy 1: Create a new video element to preload
-                const preloadVideo = document.createElement("video");
-                preloadVideo.src = "/img/Hard.mp4";
-                preloadVideo.preload = "auto";
-                preloadVideo.muted = true;
-                preloadVideo.load();
-
-                // Strategy 2: Use fetch to preload the video file
-                fetch("/img/Hard.mp4", { method: "HEAD" })
-                  .then(() => console.log("Video preloaded via fetch"))
-                  .catch((err) => console.log("Fetch preload failed:", err));
-              };
-
-              // Start preloading immediately
-              preloadVideo();
-            }, 50);
-          },
-          { once: true }
-        );
+    // Simple video loading - let browser handle it naturally
+    const videos = [videoRef.current, backgroundVideoRef.current];
+    videos.forEach((video) => {
+      if (video) {
+        // Set essential attributes once
+        video.setAttribute("webkit-playsinline", "true");
+        video.setAttribute("playsinline", "true");
+        
+        // Simple autoplay with one fallback
+        video.play().catch(() => {
+          // Only retry on first user interaction
+          const playOnInteraction = () => {
+            video.play().catch(() => {});
+            document.removeEventListener("click", playOnInteraction);
+          };
+          document.addEventListener("click", playOnInteraction, { once: true });
+        });
       }
-    };
-
-    // Small delay to ensure hydration is complete
-    const initTimer = setTimeout(ensureReady, 150);
-
-    return () => clearTimeout(initTimer);
-  }, [isMounted]);
-
-  useEffect(() => {
-    if (!isMounted) return;
-
-    // Trigger fade-in animation
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    const textTimer = setTimeout(() => setIsTextVisible(true), 800);
-
-    const video = videoRef.current;
-    const backgroundVideo = backgroundVideoRef.current;
-
-    if (!video || !backgroundVideo) {
-      // Retry if refs aren't available yet
-      if (loadingAttempts < 3) {
-        setTimeout(() => setLoadingAttempts((prev) => prev + 1), 100);
-      }
-      return;
-    }
-
-    const handleLoadedData = () => {
-      console.log("Video loaded data");
-      setIsVideoLoaded(true);
-    };
-
-    const handleCanPlay = () => {
-      console.log("Video can play");
-      setIsVideoPlaying(true);
-    };
-
-    const handleCanPlayThrough = () => {
-      console.log("Video can play through");
-    };
-
-    const handleError = (e) => {
-      console.error("Video error:", e);
-      setVideoError(true);
-    };
-
-    const handleLoadStart = () => {
-      console.log("Video load start");
-    };
-
-    const handleProgress = () => {
-      console.log("Video progress");
-    };
-
-    const loadVideos = () => {
-      try {
-        // Load background video
-        if (backgroundVideo) {
-          backgroundVideo.load();
-          backgroundVideo.play().catch((e) => {
-            console.log("Background video play failed:", e);
-          });
-        }
-
-        // Load main video
-        if (video) {
-          video.load();
-          video.play().catch((e) => {
-            console.log("Main video play failed:", e);
-          });
-        }
-      } catch (error) {
-        console.error("Error loading videos:", error);
-        setVideoError(true);
-      }
-    };
-
-    // Add event listeners
-    if (video) {
-      video.addEventListener("loadeddata", handleLoadedData);
-      video.addEventListener("canplay", handleCanPlay);
-      video.addEventListener("canplaythrough", handleCanPlayThrough);
-      video.addEventListener("error", handleError);
-      video.addEventListener("loadstart", handleLoadStart);
-      video.addEventListener("progress", handleProgress);
-    }
-
-    if (backgroundVideo) {
-      backgroundVideo.addEventListener("loadeddata", handleLoadedData);
-      backgroundVideo.addEventListener("canplay", handleCanPlay);
-      backgroundVideo.addEventListener("canplaythrough", handleCanPlayThrough);
-      backgroundVideo.addEventListener("error", handleError);
-      backgroundVideo.addEventListener("loadstart", handleLoadStart);
-      backgroundVideo.addEventListener("progress", handleProgress);
-    }
-
-    // Load videos with retry mechanism
-    let retryTimer;
-    const finalRetryTimer = setTimeout(() => {
-      if (!isVideoLoaded && loadingAttempts < 3) {
-        retryTimer = setTimeout(() => {
-          setLoadingAttempts((prev) => prev + 1);
-          loadVideos();
-        }, 1000);
-      }
-    }, 2000);
-
-    loadVideos();
+    });
 
     return () => {
-      clearTimeout(timer);
       clearTimeout(textTimer);
-      clearTimeout(retryTimer);
-      clearTimeout(finalRetryTimer);
     };
-  }, [loadingAttempts, isMounted]);
-
-  // Don't render anything until mounted to prevent hydration issues
-  if (!isMounted) {
-    return (
-      <section className="w-full h-screen bg-black relative overflow-hidden">
-        <div className="absolute inset-0 bg-black flex items-center justify-center">
-          <div className="text-center text-white">
-            <div className="animate-spin-light rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-            <div className="text-lg">Зареждане...</div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // Fallback content if video fails to load
-  if (videoError) {
-    return (
-      <section className="w-full h-screen flex items-center justify-center bg-black relative overflow-hidden">
-        <div className="absolute inset-0 bg-black flex items-center justify-center">
-          <div className="text-center text-white">
-            <h1 className="text-6xl font-bold mb-4">INSOMNIA</h1>
-            <p className="text-2xl">Открийте стила си</p>
-            <p className="text-lg mt-4 text-gray-300">Моден онлайн магазин</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  }, []);
 
   return (
     <section
@@ -224,6 +67,52 @@ export default function Hero() {
         padding: 0,
       }}
     >
+      {/* Verification Success Banner */}
+      {showVerificationSuccess && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-green-600 text-white">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <svg
+                  className="w-6 h-6 text-green-200"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div>
+                  <div className="font-semibold">
+                    Акаунтът е успешно потвърден!
+                  </div>
+                  <div className="text-sm text-green-200">
+                    Добре дошли в INSOMNIA! Вече можете да пазарувате.
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowVerificationSuccess(false)}
+                className="text-green-200 hover:text-white transition-colors p-1"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Simplified background video */}
       <div className="absolute inset-0 w-full h-full">
         <video
@@ -235,6 +124,10 @@ export default function Hero() {
           loop
           playsInline
           preload="auto"
+          controls={false}
+          disablePictureInPicture
+          webkit-playsinline="true"
+          x5-playsinline="true"
           style={{
             opacity: 0.3,
             objectFit: "cover",
@@ -245,16 +138,6 @@ export default function Hero() {
       {/* Dark overlay for mysterious vibe */}
       <div className="absolute inset-0 bg-black opacity-60"></div>
 
-      {/* Loading placeholder */}
-      {!isVideoLoaded && (
-        <div className="absolute inset-0 bg-black flex items-center justify-center z-30">
-          <div className="text-center text-white">
-            <div className="animate-spin-light rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-            <div className="text-lg">Зареждане на видео...</div>
-          </div>
-        </div>
-      )}
-
       {/* Main content container */}
       <div className="relative z-20 w-full h-full flex items-center justify-center px-4">
         {/* Main vertical video container */}
@@ -263,15 +146,17 @@ export default function Hero() {
           <div className="relative w-full h-full flex items-center justify-center">
             <video
               ref={videoRef}
-              className={`transition-opacity duration-1000 ease-out ${
-                isVideoPlaying ? "opacity-100" : "opacity-0"
-              }`}
+              className="transition-opacity duration-1000 ease-out opacity-100"
               src="/img/Hard.mp4"
               autoPlay
               muted
               loop
               playsInline
               preload="auto"
+              controls={false}
+              disablePictureInPicture
+              webkit-playsinline="true"
+              x5-playsinline="true"
               style={{
                 height: "100vh",
                 width: "auto",
@@ -426,17 +311,6 @@ export default function Hero() {
           </div>
         </div>
       </div>
-
-      {/* Fallback content if video doesn't play */}
-      {isVideoLoaded && !isVideoPlaying && !videoError && (
-        <div className="absolute inset-0 bg-black flex items-center justify-center z-10">
-          <div className="text-center text-white">
-            <h1 className="text-6xl font-bold mb-4">INSOMNIA</h1>
-            <p className="text-2xl">Открийте стила си</p>
-            <p className="text-lg mt-4 text-gray-300">Моден онлайн магазин</p>
-          </div>
-        </div>
-      )}
 
       {/* Additional styling for better visual hierarchy */}
       <style jsx>{`

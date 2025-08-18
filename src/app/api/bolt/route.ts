@@ -1,13 +1,14 @@
+
 import { NextRequest, NextResponse } from "next/server";
 
 // Bolt API endpoint - placeholder for future implementation
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // TODO: Implement Bolt payment processing
     return NextResponse.json({
       message: "Bolt endpoint - coming soon",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Bolt processing error" },
       { status: 500 }

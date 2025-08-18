@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { userRegistrationSchema } from "@/lib/validations";
 import { ZodError } from "zod";
 
@@ -15,14 +15,20 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error("JSON parse error:", error);
       return NextResponse.json(
-        { error: "Invalid JSON in request body" },
+        {
+          error:
+            "Възникна грешка при обработка на данните. Моля опитайте отново.",
+        },
         { status: 400 }
       );
     }
 
     if (!body || typeof body !== "object") {
       return NextResponse.json(
-        { error: "Request body must be a valid object" },
+        {
+          error:
+            "Възникна грешка при обработка на данните. Моля опитайте отново.",
+        },
         { status: 400 }
       );
     }
@@ -40,23 +46,24 @@ export async function POST(request: NextRequest) {
 
       // Format validation errors for better user experience
       if (validationError instanceof ZodError) {
-        const fieldErrors = (validationError as ZodError).errors.map(
-          (err: { path: (string | number)[]; message: string }) => ({
-            field: err.path.join("."),
-            message: err.message,
-          })
-        );
+        const fieldErrors = validationError.issues.map((err) => ({
+          field: err.path.join("."),
+          message: err.message,
+        }));
 
         return NextResponse.json(
           {
-            error: "Validation failed",
+            error: "Моля проверете въведените данни",
             details: fieldErrors,
           },
           { status: 400 }
         );
       }
 
-      return NextResponse.json({ error: "Validation failed" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Моля проверете въведените данни и опитайте отново" },
+        { status: 400 }
+      );
     }
 
     // Check if user already exists (by email or phone)
@@ -72,7 +79,10 @@ export async function POST(request: NextRequest) {
       if (emailError && emailError.code !== "PGRST116") {
         console.error("Error checking email:", emailError);
         return NextResponse.json(
-          { error: "Database error while checking email" },
+          {
+            error:
+              "Възникна грешка при проверка на email адреса. Моля опитайте отново.",
+          },
           { status: 500 }
         );
       }
@@ -89,7 +99,10 @@ export async function POST(request: NextRequest) {
       if (phoneError && phoneError.code !== "PGRST116") {
         console.error("Error checking phone:", phoneError);
         return NextResponse.json(
-          { error: "Database error while checking phone number" },
+          {
+            error:
+              "Възникна грешка при проверка на телефонния номер. Моля опитайте отново.",
+          },
           { status: 500 }
         );
       }
@@ -98,7 +111,10 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "User with this email or phone number already exists" },
+        {
+          error:
+            "Потребител с този email адрес или телефонен номер вече съществува",
+        },
         { status: 409 }
       );
     }
@@ -126,41 +142,75 @@ export async function POST(request: NextRequest) {
 
       if (authError.message.includes("already registered")) {
         return NextResponse.json(
-          { error: "User with this email or phone number already exists" },
+          {
+            error:
+              "Потребител с този email адрес или телефонен номер вече съществува",
+          },
           { status: 409 }
         );
       }
 
       if (authError.message.includes("Password")) {
         return NextResponse.json(
-          { error: "Password does not meet requirements" },
+          { error: "Паролата не отговаря на изискванията за сигурност" },
           { status: 400 }
         );
       }
 
       if (authError.message.includes("Email")) {
         return NextResponse.json(
-          { error: "Invalid email format" },
+          { error: "Невалиден email формат" },
           { status: 400 }
         );
       }
 
       return NextResponse.json(
-        { error: "Registration failed: " + authError.message },
+        { error: "Регистрацията неуспешна. Моля опитайте отново." },
         { status: 400 }
       );
     }
 
     if (!authData.user) {
       return NextResponse.json(
-        { error: "Registration failed - no user data returned" },
+        {
+          error:
+            "Възникна техническа грешка при регистрацията. Моля опитайте отново.",
+        },
         { status: 500 }
       );
     }
 
-    // For now, we'll create the user profile using a database trigger or function
-    // This is a simpler approach that works with RLS
-    console.log("User created successfully:", authData.user.id);
+    // Create user profile in database using admin client (bypasses RLS)
+    console.log("Creating user profile in database...");
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from("users")
+      .insert([
+        {
+          id: authData.user.id,
+          name: validatedData.name,
+          email: authEmail, // Use the email used for auth (either real email or generated one)
+          phone_number: validatedData.phone_number || null,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error("Error creating user profile:", profileError);
+
+      // If profile creation fails, we should clean up the auth user
+      // But for now, let's return an error and the user can try again
+      return NextResponse.json(
+        {
+          error:
+            "Акаунтът е създаден, но възникна грешка при създаването на профила. Моля опитайте да влезете в акаунта си.",
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log("User profile created successfully:", userProfile);
 
     // Return success response
     console.log("Registration successful, returning response...");
@@ -181,7 +231,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Registration error caught:", error);
     return NextResponse.json(
-      { error: "Internal server error during registration" },
+      { error: "Възникна техническа грешка. Моля опитайте отново след малко." },
       { status: 500 }
     );
   }

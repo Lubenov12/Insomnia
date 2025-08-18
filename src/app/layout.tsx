@@ -85,13 +85,21 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Insomnia" />
         <link rel="apple-touch-icon" href="/img/icon-192x192.png" />
+
+        {/* Chrome video autoplay optimization */}
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="antialiased bg-white text-black">
+      <body className="antialiased bg-black text-white">
+        {/* Removed global loader - keeping only PageTransition */}
+
         <PageTransition />
         <Navbar />
         <ProductProvider>
           <main>{children}</main>
         </ProductProvider>
+
+        {/* Global loader removed - no script needed */}
       </body>
     </html>
   );

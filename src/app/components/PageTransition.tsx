@@ -11,8 +11,8 @@ export default function PageTransition() {
     if (isNavigating) {
       setIsVisible(true);
     } else {
-      // Add a small delay before hiding to ensure smooth transition
-      const timeoutId = setTimeout(() => setIsVisible(false), 400);
+      // Minimal delay before hiding to ensure smooth transition
+      const timeoutId = setTimeout(() => setIsVisible(false), 100);
       return () => clearTimeout(timeoutId);
     }
   }, [isNavigating]);
@@ -24,7 +24,7 @@ export default function PageTransition() {
     };
 
     const handleLoad = () => {
-      setTimeout(() => setIsVisible(false), 400);
+      setTimeout(() => setIsVisible(false), 100);
     };
 
     // Listen for page load events
@@ -37,20 +37,11 @@ export default function PageTransition() {
     };
   }, []);
 
-  // Debug logging (remove in production)
-  useEffect(() => {
-    if (isNavigating) {
-      console.log("🔄 Navigation started");
-    } else if (isVisible) {
-      console.log("✅ Navigation completed");
-    }
-  }, [isNavigating, isVisible]);
-
   if (!isVisible) return null;
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/95 transition-opacity duration-500 ease-out ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/95 transition-opacity duration-200 ease-out ${
         isNavigating ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -74,7 +65,7 @@ export default function PageTransition() {
       <div className="absolute bottom-1/3 left-1/2 transform -translate-x-1/2 w-48">
         <div className="w-full bg-gray-800 rounded-full h-1 mb-2">
           <div
-            className="bg-purple-500 h-1 rounded-full transition-all duration-300 ease-out"
+            className="bg-purple-500 h-1 rounded-full transition-all duration-150 ease-out"
             style={{ width: `${progress}%` }}
           ></div>
         </div>

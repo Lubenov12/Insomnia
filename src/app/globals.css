@@ -261,3 +261,17 @@ video {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+
+/* Global loader removed - keeping only PageTransition */
+
+/* Optimized video loading */
+video {
+  /* Simple optimizations */
+  contain: layout style paint;
+}
+
+/* Black background for dark theme */
+html,
+body {
+  background-color: #000000;
+}
