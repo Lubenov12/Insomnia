@@ -3,6 +3,16 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Footer from "../components/Footer";
+import AuthGuard from "@/components/AuthGuard";
+import {
+  Button,
+  Input,
+  Label,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui";
 
 // Error message mapping for user-friendly feedback
 const getErrorMessage = (error: string): string => {
@@ -183,7 +193,8 @@ export default function RegisterPage() {
     "email"
   );
   const [formData, setFormData] = useState({
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone_number: "",
     password: "",
@@ -325,396 +336,383 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Hero Section */}
-      <section className="bg-black py-16 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">
-            Създайте Акаунт
-          </h1>
-          <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Присъединете се към нашата общност и открийте уникалния стил на
-            INSOMNIA.
-          </p>
-        </div>
-      </section>
-
-      {/* Registration Form Section */}
-      <section className="bg-black py-16 px-4">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-8">
-            <p className="text-gray-400">
-              Или{" "}
-              <Link
-                href="/login"
-                className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                влезте в съществуващия си акаунт
-              </Link>
+    <AuthGuard>
+      <div className="min-h-screen bg-black">
+        {/* Hero Section */}
+        <section className="bg-black py-16 px-4">
+          <div className="max-w-7xl mx-auto text-center">
+            <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">
+              Създайте Акаунт
+            </h1>
+            <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+              Присъединете се към нашата общност и открийте уникалния стил на
+              INSOMNIA.
             </p>
           </div>
+        </section>
 
-          <div className="bg-gray-900 border border-gray-700 rounded-xl py-8 px-6 shadow-2xl">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {success && (
-                <div className="bg-green-900/20 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg">
-                  {success}
-                </div>
-              )}
+        {/* Registration Form Section */}
+        <section className="bg-black py-16 px-4">
+          <div className="max-w-md mx-auto">
+            <div className="text-center mb-8">
+              <p className="text-gray-400">
+                Или{" "}
+                <Link
+                  href="/login"
+                  className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  влезте в съществуващия си акаунт
+                </Link>
+              </p>
+            </div>
 
-              {/* Personal Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Лична информация
-                </h3>
+            <Card>
+              <CardHeader>
+                <CardTitle>Създаване на акаунт</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                  {success && (
+                    <div className="bg-green-900/20 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg">
+                      {success}
+                    </div>
+                  )}
 
-                <div className="space-y-4">
+                  {/* Personal Information */}
                   <div>
-                    <label
-                      htmlFor="name"
-                      className="block text-sm font-medium text-gray-300"
-                    >
-                      Пълно име *
-                    </label>
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                      placeholder="Въведете пълно име"
-                    />
-                  </div>
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      Лична информация
+                    </h3>
 
-                  {/* Registration Type Toggle */}
-                  <div className="mt-6">
-                    <label className="block text-sm font-medium text-gray-300 mb-3">
-                      Изберете как да се регистрирате:
-                    </label>
-                    <div className="flex bg-gray-800 rounded-lg p-1">
-                      <button
-                        type="button"
-                        onClick={() => handleRegistrationTypeChange("email")}
-                        className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all cursor-pointer ${
-                          registrationType === "email"
-                            ? "bg-purple-600 text-white shadow-lg"
-                            : "text-gray-400 hover:text-white"
-                        }`}
-                      >
-                        Email
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRegistrationTypeChange("phone")}
-                        className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all cursor-pointer ${
-                          registrationType === "phone"
-                            ? "bg-purple-600 text-white shadow-lg"
-                            : "text-gray-400 hover:text-white"
-                        }`}
-                      >
-                        Телефон
-                      </button>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="first_name">Име *</Label>
+                          <Input
+                            id="first_name"
+                            name="first_name"
+                            type="text"
+                            required
+                            value={formData.first_name}
+                            onChange={handleInputChange}
+                            placeholder="Въведете име"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="last_name">Фамилия *</Label>
+                          <Input
+                            id="last_name"
+                            name="last_name"
+                            type="text"
+                            required
+                            value={formData.last_name}
+                            onChange={handleInputChange}
+                            placeholder="Въведете фамилия"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Registration Type Toggle */}
+                      <div className="mt-6">
+                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                          Изберете как да се регистрирате:
+                        </label>
+                        <div className="flex bg-gray-800 rounded-lg p-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRegistrationTypeChange("email")
+                            }
+                            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all cursor-pointer ${
+                              registrationType === "email"
+                                ? "bg-purple-600 text-white shadow-lg"
+                                : "text-gray-400 hover:text-white"
+                            }`}
+                          >
+                            Email
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRegistrationTypeChange("phone")
+                            }
+                            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all cursor-pointer ${
+                              registrationType === "phone"
+                                ? "bg-purple-600 text-white shadow-lg"
+                                : "text-gray-400 hover:text-white"
+                            }`}
+                          >
+                            Телефон
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Email Field */}
+                      {registrationType === "email" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email адрес *</Label>
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            placeholder="you@example.com"
+                          />
+                        </div>
+                      )}
+
+                      {/* Phone Field */}
+                      {registrationType === "phone" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="phone_number">
+                            Телефонен номер *
+                          </Label>
+                          <Input
+                            id="phone_number"
+                            name="phone_number"
+                            type="tel"
+                            required
+                            placeholder="+359888123456"
+                            value={formData.phone_number}
+                            onChange={handleInputChange}
+                          />
+                          <p className="text-xs text-gray-500">
+                            Използвайте международен формат (например:
+                            +359888123456)
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Email Field */}
+                  {/* Password */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      Парола
+                    </h3>
+
+                    {/* Password Requirements - moved above password inputs */}
+                    <PasswordRequirements password={formData.password} />
+
+                    <div className="space-y-4 mt-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Парола *</Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            required
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            placeholder="Въведете парола"
+                            className="pr-12"
+                          />
+                          <button
+                            type="button"
+                            onClick={togglePasswordVisibility}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
+                          >
+                            {showPassword ? (
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L12 12m-2.122-2.122L7.76 7.76m6.362 6.362L17.24 17.24m0 0L20.49 20.49M17.24 17.24l-3.12-3.12m-5.8-5.8l-3.12-3.12m0 0L2.51 2.51"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">
+                          Потвърди парола *
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            required
+                            value={formData.confirmPassword}
+                            onChange={handleInputChange}
+                            placeholder="Потвърдете парола"
+                            className="pr-12"
+                          />
+                          <button
+                            type="button"
+                            onClick={toggleConfirmPasswordVisibility}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
+                          >
+                            {showConfirmPassword ? (
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L12 12m-2.122-2.122L7.76 7.76m6.362 6.362L17.24 17.24m0 0L20.49 20.49M17.24 17.24l-3.12-3.12m-5.8-5.8l-3.12-3.12m0 0L2.51 2.51"
+                                />
+                              </svg>
+                            ) : (
+                              <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Marketing Preferences - Only show for email registration */}
                   {registrationType === "email" && (
                     <div>
-                      <label
-                        htmlFor="email"
-                        className="block text-sm font-medium text-gray-300"
-                      >
-                        Email адрес *
-                      </label>
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                        placeholder="you@example.com"
-                      />
+                      <h3 className="text-lg font-semibold text-white mb-4">
+                        Маркетинг предпочитания
+                      </h3>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center">
+                          <input
+                            id="marketing_emails"
+                            name="marketing_emails"
+                            type="checkbox"
+                            checked={formData.marketing_emails}
+                            onChange={handleInputChange}
+                            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 cursor-pointer"
+                          />
+                          <Label htmlFor="marketing_emails" className="ml-2">
+                            Получаване на email известия за промоции и нови
+                            продукти
+                          </Label>
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  {/* Phone Field */}
-                  {registrationType === "phone" && (
-                    <div>
-                      <label
-                        htmlFor="phone_number"
-                        className="block text-sm font-medium text-gray-300"
-                      >
-                        Телефонен номер *
-                      </label>
-                      <input
-                        id="phone_number"
-                        name="phone_number"
-                        type="tel"
-                        required
-                        placeholder="+359888123456"
-                        value={formData.phone_number}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                      />
-                      <p className="mt-1 text-xs text-gray-500">
-                        Използвайте международен формат (например:
-                        +359888123456)
-                      </p>
+                  {/* Terms and Conditions */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">
+                      Условия и политика
+                    </h3>
+
+                    <div className="space-y-3">
+                      <div className="flex items-start">
+                        <input
+                          id="accept_terms"
+                          name="accept_terms"
+                          type="checkbox"
+                          required
+                          checked={formData.accept_terms}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 mt-1 cursor-pointer"
+                        />
+                        <Label htmlFor="accept_terms" className="ml-2">
+                          Приемам{" "}
+                          <Link
+                            href="/terms"
+                            className="text-purple-400 hover:text-purple-300 transition-colors"
+                          >
+                            Общите условия
+                          </Link>{" "}
+                          *
+                        </Label>
+                      </div>
+
+                      <div className="flex items-start">
+                        <input
+                          id="accept_privacy"
+                          name="accept_privacy"
+                          type="checkbox"
+                          required
+                          checked={formData.accept_privacy}
+                          onChange={handleInputChange}
+                          className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 mt-1 cursor-pointer"
+                        />
+                        <Label htmlFor="accept_privacy" className="ml-2">
+                          Приемам{" "}
+                          <Link
+                            href="/privacy"
+                            className="text-purple-400 hover:text-purple-300 transition-colors"
+                          >
+                            Политиката за поверителност
+                          </Link>{" "}
+                          *
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Създаване на акаунт..." : "Създай акаунт"}
+                  </Button>
+
+                  {/* Error message at the bottom */}
+                  {error && (
+                    <div className="mt-4 bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
+                      {error}
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Парола
-                </h3>
-
-                {/* Password Requirements - moved above password inputs */}
-                <PasswordRequirements password={formData.password} />
-
-                <div className="space-y-4 mt-4">
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium text-gray-300"
-                    >
-                      Парола *
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        required
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                        placeholder="Въведете парола"
-                      />
-                      <button
-                        type="button"
-                        onClick={togglePasswordVisibility}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
-                      >
-                        {showPassword ? (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L12 12m-2.122-2.122L7.76 7.76m6.362 6.362L17.24 17.24m0 0L20.49 20.49M17.24 17.24l-3.12-3.12m-5.8-5.8l-3.12-3.12m0 0L2.51 2.51"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="confirmPassword"
-                      className="block text-sm font-medium text-gray-300"
-                    >
-                      Потвърди парола *
-                    </label>
-                    <div className="relative">
-                      <input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        required
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className="mt-1 block w-full bg-gray-800 border border-gray-600 rounded-lg shadow-sm py-3 px-4 pr-12 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                        placeholder="Потвърдете парола"
-                      />
-                      <button
-                        type="button"
-                        onClick={toggleConfirmPasswordVisibility}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
-                      >
-                        {showConfirmPassword ? (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L12 12m-2.122-2.122L7.76 7.76m6.362 6.362L17.24 17.24m0 0L20.49 20.49M17.24 17.24l-3.12-3.12m-5.8-5.8l-3.12-3.12m0 0L2.51 2.51"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Marketing Preferences - Only show for email registration */}
-              {registrationType === "email" && (
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-4">
-                    Маркетинг предпочитания
-                  </h3>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <input
-                        id="marketing_emails"
-                        name="marketing_emails"
-                        type="checkbox"
-                        checked={formData.marketing_emails}
-                        onChange={handleInputChange}
-                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 cursor-pointer"
-                      />
-                      <label
-                        htmlFor="marketing_emails"
-                        className="ml-2 block text-sm text-gray-300"
-                      >
-                        Получаване на email известия за промоции и нови продукти
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Terms and Conditions */}
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Условия и политика
-                </h3>
-
-                <div className="space-y-3">
-                  <div className="flex items-start">
-                    <input
-                      id="accept_terms"
-                      name="accept_terms"
-                      type="checkbox"
-                      required
-                      checked={formData.accept_terms}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 mt-1 cursor-pointer"
-                    />
-                    <label
-                      htmlFor="accept_terms"
-                      className="ml-2 block text-sm text-gray-300"
-                    >
-                      Приемам{" "}
-                      <Link
-                        href="/terms"
-                        className="text-purple-400 hover:text-purple-300 transition-colors"
-                      >
-                        Общите условия
-                      </Link>{" "}
-                      *
-                    </label>
-                  </div>
-
-                  <div className="flex items-start">
-                    <input
-                      id="accept_privacy"
-                      name="accept_privacy"
-                      type="checkbox"
-                      required
-                      checked={formData.accept_privacy}
-                      onChange={handleInputChange}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-600 rounded bg-gray-800 mt-1 cursor-pointer"
-                    />
-                    <label
-                      htmlFor="accept_privacy"
-                      className="ml-2 block text-sm text-gray-300"
-                    >
-                      Приемам{" "}
-                      <Link
-                        href="/privacy"
-                        className="text-purple-400 hover:text-purple-300 transition-colors"
-                      >
-                        Политиката за поверителност
-                      </Link>{" "}
-                      *
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105"
-                >
-                  {loading ? "Създаване на акаунт..." : "Създай акаунт"}
-                </button>
-              </div>
-
-              {/* Error message at the bottom */}
-              {error && (
-                <div className="mt-4 bg-red-900/20 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-            </form>
+                </form>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <Footer />
-    </div>
+        {/* Footer */}
+        <Footer />
+      </div>
+    </AuthGuard>
   );
 }

@@ -6,6 +6,18 @@ import Image from "next/image";
 import Footer from "../../components/Footer";
 import { useProducts } from "@/contexts/ProductContext";
 import CartSuccessModal from "../../components/CartSuccessModal";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { clientAuth } from "@/lib/auth";
+import {
+  ShoppingCart,
+  ArrowLeft,
+  Minus,
+  Plus,
+  AlertTriangle,
+} from "lucide-react";
 
 const SIZES = ["S", "M", "L", "XL"];
 
@@ -32,7 +44,7 @@ type Product = {
   };
 };
 
-// Memoized Size Button Component with dark theme
+// Enhanced Size Button Component with shadcn/ui styling
 const SizeButton = React.memo(
   ({
     size,
@@ -49,26 +61,28 @@ const SizeButton = React.memo(
     const isLowStock = available > 0 && available < 5;
 
     return (
-      <button
-        className={`px-6 py-3 rounded-lg border-2 font-semibold text-base transition-all duration-300 cursor-pointer relative min-w-[80px] ${
-          isOutOfStock
-            ? "bg-gray-800/50 text-gray-500 border-gray-700 cursor-not-allowed"
-            : isLowStock
-            ? selected
-              ? "bg-red-600 text-white border-red-500 shadow-lg"
-              : "bg-gray-800/80 text-red-300 border-red-500/60 hover:bg-red-900/30 hover:border-red-400"
-            : selected
-            ? "bg-purple-600 text-white border-purple-500 shadow-lg"
-            : "bg-gray-800/80 text-gray-300 border-gray-600 hover:bg-gray-700 hover:border-purple-500"
-        }`}
+      <Button
+        variant={selected ? "default" : "outline"}
+        size="lg"
         onClick={onClick}
         disabled={isOutOfStock}
+        className={`relative min-w-[80px] h-16 ${
+          isOutOfStock
+            ? "opacity-50 cursor-not-allowed"
+            : isLowStock
+            ? selected
+              ? "bg-red-600 hover:bg-red-700 border-red-500"
+              : "border-red-500 text-red-300 hover:bg-red-900/30 hover:border-red-400"
+            : selected
+            ? "bg-purple-600 hover:bg-purple-700"
+            : "hover:bg-gray-700 hover:border-purple-500"
+        }`}
       >
         <div className="flex flex-col items-center">
           <span className="text-base font-semibold">{size}</span>
-          <span className="text-sm opacity-75">{available} бр.</span>
+          <span className="text-xs opacity-75">{available} бр.</span>
         </div>
-      </button>
+      </Button>
     );
   }
 );
@@ -238,9 +252,7 @@ export default function ProductPage() {
       // Call API
       const response = await fetch("/api/cart", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: clientAuth.getAuthHeaders(),
         body: JSON.stringify({
           product_id: product.id,
           size: selectedSize,
@@ -303,17 +315,19 @@ export default function ProductPage() {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">
-            {error || "Продуктът не е намерен"}
-          </h1>
-          <Link
-            href="/clothes"
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Назад към продуктите
-          </Link>
-        </div>
+        <Card className="w-full max-w-md bg-gray-900 border-gray-700">
+          <CardContent className="p-8 text-center">
+            <h1 className="text-2xl font-bold text-white mb-4">
+              {error || "Продуктът не е намерен"}
+            </h1>
+            <Button asChild className="w-full">
+              <Link href="/clothes">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Назад към продуктите
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -337,12 +351,34 @@ export default function ProductPage() {
 
           {/* Product Details */}
           <div className="md:w-2/5 p-6 md:p-8 flex flex-col">
-            <h2 className="text-3xl font-bold text-white mb-4">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+              <Link href="/" className="hover:text-white transition-colors">
+                Начало
+              </Link>
+              <span>/</span>
+              <Link
+                href="/clothes"
+                className="hover:text-white transition-colors"
+              >
+                Дрехи
+              </Link>
+              <span>/</span>
+              <span className="text-white">{product.name}</span>
+            </div>
+
+            <h2 className="text-3xl font-bold text-white mb-2">
               {product.name}
             </h2>
-            <p className="text-2xl font-bold text-purple-400 mb-6">
-              {product.price.toFixed(2)} лв.
-            </p>
+
+            {/* Price */}
+            <div className="mb-6">
+              <p className="text-3xl font-bold text-purple-400">
+                {product.price.toFixed(2)} лв.
+              </p>
+            </div>
+
+            <Separator className="mb-6" />
 
             <div className="mb-6">
               <p className="text-gray-300 text-sm leading-relaxed">
@@ -353,11 +389,11 @@ export default function ProductPage() {
             {/* Size Selection */}
             <div className="mb-8">
               <div className="mb-4">
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="text-lg font-bold text-white mb-2">
                   Изберете размер:
                 </h3>
               </div>
-              <div className="flex gap-3 mb-4">
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 {SIZES.map((size) => {
                   const available = product.size_availability?.[size] || 0;
                   return (
@@ -377,7 +413,7 @@ export default function ProductPage() {
                 product.size_availability[selectedSize] < 5 &&
                 product.size_availability[selectedSize] > 0 && (
                   <div className="flex items-center gap-2 p-3 bg-red-900/20 border border-red-500/30 rounded-lg">
-                    <span className="text-red-400 text-lg">⚠</span>
+                    <AlertTriangle className="text-red-400 w-4 h-4" />
                     <span className="text-red-200 text-sm">
                       Последни {product.size_availability[selectedSize]} бройки
                       от размер {selectedSize}
@@ -398,31 +434,23 @@ export default function ProductPage() {
                 )}
               </div>
               <div className="flex items-center border border-gray-600 rounded-xl bg-gray-800 overflow-hidden">
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleQuantityChange(quantity - 1)}
                   disabled={quantity <= 1}
-                  className="w-12 h-12 flex items-center justify-center text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border-r border-gray-600"
+                  className="w-12 h-12 rounded-none hover:bg-gray-700 disabled:opacity-50"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M20 12H4"
-                    />
-                  </svg>
-                </button>
+                  <Minus className="w-4 h-4" />
+                </Button>
                 <div className="flex-1 text-center px-4 py-3">
                   <span className="text-white text-lg font-semibold">
                     {quantity}
                   </span>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleQuantityChange(quantity + 1)}
                   disabled={
                     selectedSize
@@ -430,80 +458,92 @@ export default function ProductPage() {
                         (product.size_availability?.[selectedSize] || 0)
                       : true
                   }
-                  className="w-12 h-12 flex items-center justify-center text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border-l border-gray-600"
+                  className="w-12 h-12 rounded-none hover:bg-gray-700 disabled:opacity-50"
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                </button>
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
             </div>
 
             {/* Add to Cart Button */}
-            <button
+            <Button
               onClick={addToCart}
               disabled={!selectedSize || isAddingToCart}
-              className="w-full py-5 bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-700 text-white font-bold text-xl rounded-2xl hover:from-purple-700 hover:via-purple-800 hover:to-indigo-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mb-6 shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:hover:scale-100"
-              style={{
-                animation:
-                  selectedSize && !isAddingToCart
-                    ? "wiggle 2s ease-in-out infinite"
-                    : "none",
-                pointerEvents:
-                  !selectedSize || isAddingToCart ? "none" : "auto",
-              }}
+              size="lg"
+              className="w-full h-14 text-lg font-bold mb-4"
             >
               {isAddingToCart ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                   Добавяне...
-                </span>
+                </>
               ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <svg
-                    className="text-white w-6 h-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H18M7 13l1.5-6m9.5 12a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm-10 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
-                    />
-                  </svg>
+                <>
+                  <ShoppingCart className="w-5 h-5 mr-2" />
                   Добави в количката
-                </span>
+                </>
               )}
-            </button>
+            </Button>
 
             {/* Error Message */}
             {error && (
-              <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-center">
+              <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-center mb-4">
                 {error}
               </div>
             )}
 
             {/* Back to Products */}
-            <Link
-              href="/clothes"
-              className="w-full py-3 bg-gray-800 text-white font-semibold rounded-xl hover:bg-gray-700 transition-colors text-center"
-            >
-              ← Обратно към дрехите
-            </Link>
+            <Button variant="outline" asChild className="w-full">
+              <Link href="/clothes">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Обратно към дрехите
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
+
+      {/* Similar Products Section */}
+      {similarProducts.length > 0 && (
+        <section className="bg-black py-16 px-4">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-2xl font-bold text-white mb-8 text-center">
+              Подобни продукти
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {similarProducts.map((similarProduct) => (
+                <Card
+                  key={similarProduct.id}
+                  className="bg-gray-900 border-gray-700 hover:border-purple-500 transition-colors"
+                >
+                  <CardContent className="p-4">
+                    <div className="relative h-48 mb-4 rounded-lg overflow-hidden">
+                      <Image
+                        src={similarProduct.image_url}
+                        alt={similarProduct.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      />
+                    </div>
+                    <CardTitle className="text-white text-lg mb-2 line-clamp-2">
+                      {similarProduct.name}
+                    </CardTitle>
+                    <p className="text-purple-400 font-bold text-lg mb-3">
+                      {similarProduct.price.toFixed(2)} лв.
+                    </p>
+                    <Button asChild className="w-full">
+                      <Link href={`/product/${similarProduct.id}`}>
+                        Преглед
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <Footer />
 
@@ -513,22 +553,6 @@ export default function ProductPage() {
         onClose={() => setShowCartModal(false)}
         productName={product?.name || ""}
       />
-
-      {/* Wiggle Animation CSS */}
-      <style jsx>{`
-        @keyframes wiggle {
-          0%,
-          100% {
-            transform: translate(0, 0);
-          }
-          25% {
-            transform: translate(-2px, -2px);
-          }
-          75% {
-            transform: translate(2px, 2px);
-          }
-        }
-      `}</style>
     </div>
   );
 }

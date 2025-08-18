@@ -1,8 +1,17 @@
 import { NextRequest } from "next/server";
 import { supabase } from "./supabase";
-import { User } from "./supabase";
 
-// Get authenticated user from request headers
+export interface User {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+  marketing_emails?: boolean;
+  created_at: string;
+}
+
 export async function getAuthUser(request: NextRequest): Promise<User | null> {
   try {
     const authHeader = request.headers.get("authorization");
@@ -11,8 +20,6 @@ export async function getAuthUser(request: NextRequest): Promise<User | null> {
     }
 
     const token = authHeader.substring(7);
-
-    // Verify token with Supabase
     const {
       data: { user },
       error,
@@ -22,16 +29,12 @@ export async function getAuthUser(request: NextRequest): Promise<User | null> {
       return null;
     }
 
-    // Get user profile from our users table
-    const { data: userProfile, error: profileError } = await supabase
+    // Fetch user profile from database
+    const { data: userProfile } = await supabase
       .from("users")
       .select("*")
       .eq("id", user.id)
       .single();
-
-    if (profileError || !userProfile) {
-      return null;
-    }
 
     return userProfile;
   } catch (error) {
@@ -119,12 +122,14 @@ export const clientAuth = {
   getAuthHeaders: (): HeadersInit => {
     const session = clientAuth.getCurrentSession();
 
-    if (!session?.access_token) {
-      return {};
+    if (session?.access_token) {
+      return {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      };
     }
 
     return {
-      Authorization: `Bearer ${session.access_token}`,
       "Content-Type": "application/json",
     };
   },

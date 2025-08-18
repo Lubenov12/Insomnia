@@ -16,6 +16,20 @@ import {
 const CACHE_DURATION = 300; // 5 minutes
 const cache = new Map();
 
+// Rate limiting map with cleanup
+const rateLimitMap = new Map();
+
+// Clean up old entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamp] of rateLimitMap.entries()) {
+    if (now - timestamp > 60000) {
+      // Remove entries older than 1 minute
+      rateLimitMap.delete(key);
+    }
+  }
+}, 300000); // Run every 5 minutes
+
 // Helper function to generate cache key
 function generateCacheKey(searchParams: URLSearchParams): string {
   const params = new URLSearchParams(searchParams);
@@ -26,6 +40,8 @@ function generateCacheKey(searchParams: URLSearchParams): string {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+
+    // Rate limiting temporarily disabled to fix product loading issues
 
     // Check cache first
     const cacheKey = generateCacheKey(searchParams);

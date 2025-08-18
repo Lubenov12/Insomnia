@@ -67,32 +67,6 @@ const EyeIcon = memo(() => (
 
 EyeIcon.displayName = "EyeIcon";
 
-const HeartIcon = memo(() => (
-  <svg
-    className="text-white w-6 h-6"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    style={{ position: "relative", zIndex: 1 }}
-  >
-    <path
-      stroke="currentColor"
-      strokeWidth="2"
-      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 1.01 4.5 2.09C13.09 4.01 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-      className="transition-all duration-300"
-      style={{ zIndex: 2 }}
-    />
-    <path
-      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 1.01 4.5 2.09C13.09 4.01 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-      fill="#fff"
-      className="group-hover:opacity-100 opacity-0 transition-opacity duration-300"
-      style={{ zIndex: 1 }}
-    />
-  </svg>
-));
-
-HeartIcon.displayName = "HeartIcon";
-
 const CartIcon = memo(() => (
   <svg
     className="text-white w-6 h-6 group"
@@ -209,9 +183,38 @@ export default function Navbar() {
     // Check for existing session
     const checkAuth = async () => {
       try {
+        // First, try to get session from localStorage as fallback
+        const storedUser = localStorage.getItem("user");
+        const storedSession = localStorage.getItem("session");
+
+        if (storedUser && storedSession) {
+          try {
+            const userData = JSON.parse(storedUser);
+            const sessionData = JSON.parse(storedSession);
+
+            // Check if session is still valid
+            if (
+              sessionData.expires_at &&
+              new Date(sessionData.expires_at * 1000) > new Date()
+            ) {
+              console.log("Using stored session data");
+              setUser(userData);
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.log("Invalid stored session data, clearing...");
+            localStorage.removeItem("user");
+            localStorage.removeItem("session");
+          }
+        }
+
+        // Also check Supabase session
         const {
           data: { session },
         } = await supabase.auth.getSession();
+
+        console.log("Initial session check:", session?.user?.id);
 
         if (session?.user) {
           // Fetch user profile
@@ -221,19 +224,37 @@ export default function Navbar() {
             .eq("id", session.user.id)
             .single();
 
-          setUser(
-            userProfile || {
-              id: session.user.id,
-              name: session.user.email?.split("@")[0] || "User",
-              email: session.user.email,
-            }
+          console.log("Initial user profile:", userProfile);
+          const userData = userProfile || {
+            id: session.user.id,
+            first_name: session.user.email?.split("@")[0] || "User",
+            last_name: "",
+            email: session.user.email,
+          };
+
+          setUser(userData);
+
+          // Update localStorage with fresh data
+          localStorage.setItem("user", JSON.stringify(userData));
+          localStorage.setItem(
+            "session",
+            JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+            })
           );
         } else {
           setUser(null);
+          // Clear localStorage if no session
+          localStorage.removeItem("user");
+          localStorage.removeItem("session");
         }
       } catch (error) {
         console.error("Auth check error:", error);
         setUser(null);
+        localStorage.removeItem("user");
+        localStorage.removeItem("session");
       } finally {
         setLoading(false);
       }
@@ -241,45 +262,216 @@ export default function Navbar() {
 
     checkAuth();
 
+    // Also check for localStorage changes (for API login)
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem("user");
+      const storedSession = localStorage.getItem("session");
+
+      if (storedUser && storedSession) {
+        try {
+          const userData = JSON.parse(storedUser);
+          const sessionData = JSON.parse(storedSession);
+
+          if (
+            sessionData.expires_at &&
+            new Date(sessionData.expires_at * 1000) > new Date()
+          ) {
+            console.log("Storage change detected, updating user state");
+            setUser(userData);
+          }
+        } catch (e) {
+          console.error("Error parsing stored data:", e);
+        }
+      } else {
+        setUser(null);
+      }
+    };
+
+    // Listen for storage events
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also check periodically for localStorage changes
+    const storageCheckInterval = setInterval(() => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser && !user) {
+        handleStorageChange();
+      }
+    }, 1000);
+
+    // Set up periodic session refresh
+    const refreshInterval = setInterval(async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          // Refresh session if it's close to expiring
+          const expiresAt = session.expires_at;
+          const now = Math.floor(Date.now() / 1000);
+          const timeUntilExpiry = expiresAt - now;
+
+          if (timeUntilExpiry < 300) {
+            // Refresh if less than 5 minutes until expiry
+            console.log("Refreshing session...");
+            const {
+              data: { session: newSession },
+            } = await supabase.auth.refreshSession();
+            if (newSession) {
+              // Update localStorage with new session data
+              const storedUser = localStorage.getItem("user");
+              if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                localStorage.setItem(
+                  "session",
+                  JSON.stringify({
+                    access_token: newSession.access_token,
+                    refresh_token: newSession.refresh_token,
+                    expires_at: newSession.expires_at,
+                  })
+                );
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Session refresh error:", error);
+      }
+    }, 60000); // Check every minute
+
     // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        // Fetch user profile
-        const { data: userProfile } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
+      console.log("Auth state changed:", event, session?.user?.id);
 
-        setUser(
-          userProfile || {
+      if (event === "SIGNED_IN" && session?.user) {
+        setLoading(true);
+        try {
+          // Fetch user profile
+          const { data: userProfile } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+
+          console.log("User profile fetched after sign in:", userProfile);
+          const userData = userProfile || {
             id: session.user.id,
-            name: session.user.email?.split("@")[0] || "User",
+            first_name: session.user.email?.split("@")[0] || "User",
+            last_name: "",
             email: session.user.email,
-          }
-        );
+          };
+
+          setUser(userData);
+
+          // Update localStorage
+          localStorage.setItem("user", JSON.stringify(userData));
+          localStorage.setItem(
+            "session",
+            JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+            })
+          );
+        } catch (error) {
+          console.error("Error fetching user profile after sign in:", error);
+          const userData = {
+            id: session.user.id,
+            first_name: session.user.email?.split("@")[0] || "User",
+            last_name: "",
+            email: session.user.email,
+          };
+          setUser(userData);
+          localStorage.setItem("user", JSON.stringify(userData));
+          localStorage.setItem(
+            "session",
+            JSON.stringify({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at,
+            })
+          );
+        } finally {
+          setLoading(false);
+        }
       } else if (event === "SIGNED_OUT") {
         setUser(null);
+        setLoading(false);
+        // Clear localStorage on sign out
+        localStorage.removeItem("user");
+        localStorage.removeItem("session");
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(refreshInterval);
+      clearInterval(storageCheckInterval);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   // Logout function
   const handleLogout = useCallback(async () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      "Сигурни ли сте, че искате да излезете от акаунта?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
       await supabase.auth.signOut();
       // Clear local storage
       localStorage.removeItem("user");
       localStorage.removeItem("session");
       localStorage.removeItem("pendingEmail");
+
+      // Show logout success message
+      const successMessage = document.createElement("div");
+      successMessage.className =
+        "fixed top-20 right-4 z-50 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2";
+      successMessage.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>Успешно излязохте от акаунта!</span>
+      `;
+      document.body.appendChild(successMessage);
+
+      // Remove message after 3 seconds
+      setTimeout(() => {
+        if (successMessage.parentNode) {
+          successMessage.parentNode.removeChild(successMessage);
+        }
+      }, 3000);
+
       // Redirect to home
       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
+
+      // Show error message
+      const errorMessage = document.createElement("div");
+      errorMessage.className =
+        "fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2";
+      errorMessage.innerHTML = `
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+        <span>Грешка при излизане от акаунта!</span>
+      `;
+      document.body.appendChild(errorMessage);
+
+      // Remove message after 3 seconds
+      setTimeout(() => {
+        if (errorMessage.parentNode) {
+          errorMessage.parentNode.removeChild(errorMessage);
+        }
+      }, 3000);
     }
   }, [router]);
 
@@ -300,6 +492,9 @@ export default function Navbar() {
   const handleCartClick = useCallback(() => {
     router.push("/cart");
   }, [router]);
+
+  // Debug log to see current user state (commented out to prevent console spam)
+  // console.log("Navbar render - user:", user, "loading:", loading);
 
   return (
     <nav
@@ -337,18 +532,10 @@ export default function Navbar() {
                 <div className="flex items-center space-x-2 mr-4">
                   <UserIcon />
                   <span className="text-sm font-medium">
-                    Здравей, {user.name}!
+                    Здравей, {user.first_name || "User"} {user.last_name || ""}!
                   </span>
                 </div>
-                <button
-                  className="relative group p-2 cursor-pointer"
-                  aria-label="Любими"
-                >
-                  <HeartIcon />
-                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                    Любими
-                  </span>
-                </button>
+
                 <button
                   className="relative group p-2 cursor-pointer"
                   aria-label="Количка"
@@ -361,12 +548,12 @@ export default function Navbar() {
                 </button>
                 <button
                   className="relative group p-2 cursor-pointer"
-                  aria-label="Излизане"
+                  aria-label="Излизане от акаунта"
                   onClick={handleLogout}
                 >
                   <LogoutIcon />
                   <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                    Излизане
+                    Излизане от акаунта
                   </span>
                 </button>
               </>
@@ -428,16 +615,10 @@ export default function Navbar() {
               <div className="flex items-center justify-center w-full p-2 mb-2">
                 <UserIcon />
                 <span className="text-base text-white ml-3">
-                  Здравей, {user.name}!
+                  Здравей, {user.first_name || "User"} {user.last_name || ""}!
                 </span>
               </div>
-              <button
-                className="flex items-center w-full p-2 cursor-pointer"
-                aria-label="Любими"
-              >
-                <HeartIcon />
-                <span className="text-base text-white ml-3">Любими</span>
-              </button>
+
               <button
                 className="flex items-center w-full p-2 cursor-pointer"
                 aria-label="Количка"
@@ -448,11 +629,13 @@ export default function Navbar() {
               </button>
               <button
                 className="flex items-center w-full p-2 cursor-pointer border-t border-gray-600 pt-4"
-                aria-label="Излизане"
+                aria-label="Излизане от акаунта"
                 onClick={handleLogout}
               >
                 <LogoutIcon />
-                <span className="text-base text-white ml-3">Излизане</span>
+                <span className="text-base text-white ml-3">
+                  Излизане от акаунта
+                </span>
               </button>
             </div>
           ) : (

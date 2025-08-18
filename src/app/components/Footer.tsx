@@ -74,14 +74,7 @@ export default function Footer() {
                   Магазин
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/favorites"
-                  className="text-gray-400 hover:text-purple-400 transition-colors text-sm"
-                >
-                  Любими
-                </Link>
-              </li>
+
               <li>
                 <Link
                   href="/cart"

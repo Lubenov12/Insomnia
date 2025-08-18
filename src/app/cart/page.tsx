@@ -3,7 +3,37 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useProducts } from "@/contexts/ProductContext";
-import { CartSkeleton } from "@/components/ProductSkeleton";
+import { clientAuth } from "@/lib/auth";
+// CartSkeleton component defined inline
+const CartSkeleton = () => (
+  <div className="min-h-screen bg-black py-16 px-4">
+    <div className="max-w-5xl mx-auto">
+      <div className="h-8 bg-gray-800 rounded-lg mb-8 animate-pulse"></div>
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl overflow-hidden">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="flex flex-col sm:flex-row items-center gap-4 p-4 border-b border-gray-800"
+          >
+            <div className="w-24 h-24 bg-gray-800 rounded-lg animate-pulse"></div>
+            <div className="flex-1 w-full space-y-3">
+              <div className="h-4 bg-gray-800 rounded animate-pulse"></div>
+              <div className="h-3 bg-gray-800 rounded w-1/2 animate-pulse"></div>
+              <div className="h-3 bg-gray-800 rounded w-1/4 animate-pulse"></div>
+            </div>
+          </div>
+        ))}
+        <div className="p-6">
+          <div className="h-6 bg-gray-800 rounded animate-pulse mb-6"></div>
+          <div className="flex gap-4">
+            <div className="flex-1 h-12 bg-gray-800 rounded animate-pulse"></div>
+            <div className="flex-1 h-12 bg-gray-800 rounded animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 type LocalCartItem = {
   product_id: string;
@@ -162,7 +192,7 @@ export default function CartPage() {
       try {
         await fetch(`/api/cart`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: clientAuth.getAuthHeaders(),
           body: JSON.stringify({ product_id, size, quantity }),
         });
       } catch {}
@@ -177,6 +207,7 @@ export default function CartPage() {
     try {
       await fetch(`/api/cart?product_id=${product_id}&size=${size}`, {
         method: "DELETE",
+        headers: clientAuth.getAuthHeaders(),
       });
     } catch {}
   }, []);
@@ -227,6 +258,7 @@ export default function CartPage() {
         // Remove old size item
         await fetch(`/api/cart?product_id=${product_id}&size=${oldSize}`, {
           method: "DELETE",
+          headers: clientAuth.getAuthHeaders(),
         });
 
         // Add new size item (the quantity will be handled by the existing logic)
@@ -236,7 +268,7 @@ export default function CartPage() {
         if (itemToUpdate) {
           await fetch(`/api/cart`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: clientAuth.getAuthHeaders(),
             body: JSON.stringify({
               product_id,
               size: newSize,

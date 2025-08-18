@@ -74,10 +74,11 @@ export async function POST(request: NextRequest) {
           .insert([
             {
               id: authData.user.id,
-              name:
-                authData.user.user_metadata?.name ||
+              first_name:
+                authData.user.user_metadata?.first_name ||
                 authData.user.email?.split("@")[0] ||
                 "User",
+              last_name: authData.user.user_metadata?.last_name || "",
               email: authData.user.email || "",
               phone_number: authData.user.user_metadata?.phone_number || "",
               created_at: new Date().toISOString(),

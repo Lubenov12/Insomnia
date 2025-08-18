@@ -63,19 +63,34 @@ export const productSchema = z.object({
 // Simplified user registration schema
 export const userRegistrationSchema = z
   .object({
-    name: z
+    first_name: z
       .string()
-      .min(2, "Name must be at least 2 characters")
-      .max(255, "Name must be less than 255 characters")
+      .min(2, "First name must be at least 2 characters")
+      .max(100, "First name must be less than 100 characters")
       .trim()
       .refine(
         (val) => val.length > 0,
-        "Name cannot be empty or just whitespace"
+        "First name cannot be empty or just whitespace"
       )
       .refine(
         (val) => /^[a-zA-ZÀ-ÿ\s\-'\.]+$/.test(val),
-        "Name can only contain letters, spaces, hyphens, apostrophes, and dots"
+        "First name can only contain letters, spaces, hyphens, apostrophes, and dots"
       ),
+    last_name: z
+      .string()
+      .min(2, "Last name must be at least 2 characters")
+      .max(100, "Last name must be less than 100 characters")
+      .trim()
+      .refine(
+        (val) => val.length > 0,
+        "Last name cannot be empty or just whitespace"
+      )
+      .refine(
+        (val) => /^[a-zA-ZÀ-ÿ\s\-'\.]+$/.test(val),
+        "Last name can only contain letters, spaces, hyphens, apostrophes, and dots"
+      ),
+    // Keep name field for backward compatibility (will be computed from first_name + last_name)
+    name: z.string().optional(),
     email: z
       .string()
       .max(320, "Email must be less than 320 characters")
@@ -153,6 +168,27 @@ export const userLoginSchema = z.object({
 });
 
 export const userUpdateSchema = z.object({
+  first_name: z
+    .string()
+    .min(2, "First name must be at least 2 characters")
+    .max(100, "First name must be less than 100 characters")
+    .trim()
+    .refine(
+      (val) => /^[a-zA-ZÀ-ÿ\s\-'\.]+$/.test(val),
+      "First name can only contain letters, spaces, hyphens, apostrophes, and dots"
+    )
+    .optional(),
+  last_name: z
+    .string()
+    .min(2, "Last name must be at least 2 characters")
+    .max(100, "Last name must be less than 100 characters")
+    .trim()
+    .refine(
+      (val) => /^[a-zA-ZÀ-ÿ\s\-'\.]+$/.test(val),
+      "Last name can only contain letters, spaces, hyphens, apostrophes, and dots"
+    )
+    .optional(),
+  // Keep name field for backward compatibility
   name: z
     .string()
     .min(2, "Name must be at least 2 characters")
@@ -229,12 +265,6 @@ export const createOrderSchema = z.object({
 
 export const updateOrderSchema = z.object({
   status: z.enum(["pending", "shipped", "delivered", "cancelled"]),
-});
-
-// Favorites validation schemas
-export const addToFavoritesSchema = z.object({
-  user_id: z.string().uuid("Invalid user ID"),
-  product_id: z.string().uuid("Invalid product ID"),
 });
 
 // General validation schemas

@@ -3,15 +3,42 @@ import React, { useEffect, useCallback, Suspense, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useProducts } from "@/contexts/ProductContext";
-import { ProductGridSkeleton } from "@/components/ProductSkeleton";
+// ProductGridSkeleton component defined inline
+const ProductGridSkeleton = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {Array.from({ length: 8 }).map((_, index) => (
+      <div
+        key={index}
+        className="bg-gray-900 border border-gray-700 rounded-xl overflow-hidden animate-pulse"
+      >
+        <div className="aspect-square bg-gray-800"></div>
+        <div className="p-4 space-y-3">
+          <div className="h-4 bg-gray-800 rounded"></div>
+          <div className="h-3 bg-gray-800 rounded w-1/2"></div>
+          <div className="h-8 bg-gray-800 rounded"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 // Use the context hook
 const useProductData = () => {
   const { state, fetchProducts, isLoading, error } = useProducts();
 
   useEffect(() => {
-    fetchProducts(1, 8);
-  }, [fetchProducts]);
+    // Only fetch if we don't have products or if it's the initial load
+    if (state.products.length === 0) {
+      fetchProducts(1, 8);
+    }
+  }, []); // Empty dependency array to run only once
+
+  // Cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Cleanup function - this will run when component unmounts
+    };
+  }, []);
 
   const loadMore = useCallback(() => {
     if (

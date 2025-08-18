@@ -120,7 +120,11 @@ const useProducts = (page: number, limit: number = 12) => {
         });
 
         const res = await fetch(`/api/products?${params}`);
-        if (!res.ok) throw new Error("Failed to fetch products");
+        if (!res.ok) {
+          throw new Error(
+            `Failed to fetch products: ${res.status} ${res.statusText}`
+          );
+        }
 
         const data = await res.json();
 
@@ -139,7 +143,11 @@ const useProducts = (page: number, limit: number = 12) => {
         setPagination(data.pagination);
         setHasMore(data.pagination.page < data.pagination.totalPages);
       } catch (err) {
-        setError("Грешка при зареждане на продуктите.");
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Грешка при зареждане на продуктите.";
+        setError(errorMessage);
         console.error("Error fetching products:", err);
       } finally {
         setLoading(false);

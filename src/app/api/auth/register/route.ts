@@ -131,7 +131,8 @@ export async function POST(request: NextRequest) {
       password: validatedData.password,
       options: {
         data: {
-          name: validatedData.name,
+          first_name: validatedData.first_name,
+          last_name: validatedData.last_name,
           role: "user", // Explicitly set as regular user
         },
       },
@@ -187,7 +188,8 @@ export async function POST(request: NextRequest) {
       .insert([
         {
           id: authData.user.id,
-          name: validatedData.name,
+          first_name: validatedData.first_name,
+          last_name: validatedData.last_name,
           email: authEmail, // Use the email used for auth (either real email or generated one)
           phone_number: validatedData.phone_number || null,
           created_at: new Date().toISOString(),
@@ -219,7 +221,8 @@ export async function POST(request: NextRequest) {
         message: "Registration successful",
         user: {
           id: authData.user.id,
-          name: validatedData.name,
+          first_name: validatedData.first_name,
+          last_name: validatedData.last_name,
           email: validatedData.email,
           phone_number: validatedData.phone_number,
           created_at: new Date().toISOString(),

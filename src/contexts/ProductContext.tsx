@@ -218,17 +218,18 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
       limit: number = 8,
       filters: ProductFilters = {}
     ) => {
-      // Always fetch fresh data for initial load or when filters change
+      // Check if we should skip fetching (cache is valid and we have data)
       if (
-        page === 1 ||
-        state.products.length === 0 ||
-        JSON.stringify(state.filters) !== JSON.stringify(filters)
-      ) {
-        // Fetch fresh data
-      } else if (
+        page === 1 &&
         isCacheValid &&
-        state.products.length > 0
+        state.products.length > 0 &&
+        JSON.stringify(state.filters) === JSON.stringify(filters)
       ) {
+        return;
+      }
+
+      // Prevent multiple simultaneous requests
+      if (state.loading) {
         return;
       }
 
@@ -268,7 +269,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: "SET_ERROR", payload: errorMessage });
       }
     },
-    [isCacheValid, state.products.length, state.filters]
+    [isCacheValid, state.products.length, state.filters, state.loading]
   );
 
   // Fetch single product detail with caching
