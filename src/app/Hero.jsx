@@ -201,14 +201,14 @@ export default function Hero() {
                   isTextVisible ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <Image
+                {/* <Image
                   src="/img/file.svg"
                   alt="Insomnia Logo"
                   width={120}
                   height={120}
                   className="h-24 w-24 md:h-32 md:w-32 mx-auto drop-shadow-2xl object-contain"
                   priority
-                />
+                /> */}
               </div>
 
               {/* Main Headline */}
