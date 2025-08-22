@@ -3,6 +3,7 @@ import React, { useEffect, useCallback, Suspense, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useProducts } from "@/contexts/ProductContext";
+
 // ProductGridSkeleton component defined inline
 const ProductGridSkeleton = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -27,11 +28,17 @@ const useProductData = () => {
   const { state, fetchProducts, isLoading, error } = useProducts();
 
   useEffect(() => {
-    // Only fetch if we don't have products or if it's the initial load
-    if (state.products.length === 0) {
-      fetchProducts(1, 8);
-    }
-  }, []); // Empty dependency array to run only once
+    // Always fetch products on mount, regardless of cache
+    const loadProducts = async () => {
+      try {
+        await fetchProducts(1, 8);
+      } catch (error) {
+        // Silent error handling - errors are handled by the context
+      }
+    };
+
+    loadProducts();
+  }, [fetchProducts]); // Include fetchProducts in dependencies
 
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
@@ -138,7 +145,7 @@ const ProductCard = React.memo(
 ProductCard.displayName = "ProductCard";
 
 // Loading Grid Component - now using the skeleton component
-const LoadingGrid = () => <ProductGridSkeleton count={8} />;
+const LoadingGrid = () => <ProductGridSkeleton />;
 
 // Main Products Component
 const ProductsGrid = () => {
@@ -159,20 +166,31 @@ const ProductsGrid = () => {
     loadMore();
   }, [loadMore]);
 
-  // Cache management is now handled by the context
-
   // Show loading state for initial load - simplified for speed
   if (loading && products.length === 0) {
-    return <LoadingGrid />;
+    return (
+      <div className="text-center py-8">
+        <ProductGridSkeleton />
+        <p className="text-gray-400 mt-4">Зареждане на продукти...</p>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-red-400 mb-4">{error}</div>
+        <div className="text-red-400 mb-4 text-lg">
+          {error.includes("Network error")
+            ? "Проблем с мрежата. Моля, проверете връзката си."
+            : "Грешка при зареждане на продуктите"}
+        </div>
+        <div className="text-gray-400 mb-6 text-sm">{error}</div>
         <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          onClick={() => {
+            // Clear error and retry
+            window.location.reload();
+          }}
+          className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
         >
           Опитай отново
         </button>
@@ -218,7 +236,7 @@ const ProductsGrid = () => {
 
 export default function ProductSection() {
   return (
-    <section className="bg-black py-16 px-4">
+    <section className="bg-black py-16 px-4 mt-12">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-4">
@@ -230,7 +248,7 @@ export default function ProductSection() {
           </p>
         </div>
 
-        <Suspense fallback={<LoadingGrid />}>
+        <Suspense fallback={<ProductGridSkeleton />}>
           <ProductsGrid />
         </Suspense>
 

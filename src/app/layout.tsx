@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "./Navbar";
 import PageTransition from "./components/PageTransition";
+import ConditionalPromotionalBanner from "@/components/ConditionalPromotionalBanner";
 import { ProductProvider } from "@/contexts/ProductContext";
 
 // Optimize font loading with display swap and preload
@@ -78,13 +79,17 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
 
+        {/* Favicon */}
+        <link rel="icon" type="image/svg+xml" href="/img/file.svg" />
+        <link rel="shortcut icon" type="image/svg+xml" href="/img/file.svg" />
+
         {/* PWA manifest */}
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Insomnia" />
-        <link rel="apple-touch-icon" href="/img/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/img/file.svg" />
 
         {/* Chrome video autoplay optimization */}
         <meta name="format-detection" content="telephone=no" />
@@ -94,6 +99,7 @@ export default function RootLayout({
         {/* Removed global loader - keeping only PageTransition */}
 
         <PageTransition />
+        <ConditionalPromotionalBanner />
         <Navbar />
         <ProductProvider>
           <main>{children}</main>

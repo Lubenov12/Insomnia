@@ -83,9 +83,8 @@ export async function GET(request: NextRequest) {
       .from("products")
       .select(
         // Only select necessary fields for the product list
-        "id, name, price, image_url, category, stock_quantity, created_at"
+        "id, name, price, image_url, category, created_at"
       )
-      .gte("stock_quantity", 1) // Only show products in stock
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -113,8 +112,7 @@ export async function GET(request: NextRequest) {
     // Get total count with optimized query
     let countQuery = supabase
       .from("products")
-      .select("*", { count: "exact", head: true })
-      .gte("stock_quantity", 1);
+      .select("*", { count: "exact", head: true });
 
     if (category) {
       countQuery = countQuery.eq("category", category);

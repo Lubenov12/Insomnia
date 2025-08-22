@@ -1,0 +1,115 @@
+/* Admin Dark Theme Styles */
+
+/* Remove number input arrows */
+.admin-number-input::-webkit-outer-spin-button,
+.admin-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.admin-number-input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+/* Dark theme overrides for admin cards */
+.admin-dark-card {
+  background-color: #1f2937 !important; /* gray-800 */
+  border-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important; /* gray-50 */
+}
+
+.admin-dark-card .card-title {
+  color: #ffffff !important;
+}
+
+.admin-dark-card .card-content {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+/* Dark theme for variant cards */
+.admin-variant-card {
+  background-color: #111827 !important; /* gray-900 */
+  border-color: #374151 !important; /* gray-700 */
+  color: #f9fafb !important; /* gray-50 */
+}
+
+/* Dark theme for badges */
+.admin-dark-badge {
+  background-color: #374151 !important; /* gray-700 */
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.admin-dark-badge.destructive {
+  background-color: #dc2626 !important; /* red-600 */
+  color: #ffffff !important;
+}
+
+.admin-dark-badge.default {
+  background-color: #7c3aed !important; /* purple-600 */
+  color: #ffffff !important;
+}
+
+/* Dark theme for labels */
+.admin-dark-label {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+/* Dark theme for input fields */
+.admin-dark-input {
+  background-color: #374151 !important; /* gray-700 */
+  border-color: #4b5563 !important; /* gray-600 */
+  color: #f9fafb !important; /* gray-50 */
+}
+
+.admin-dark-input:focus {
+  border-color: #7c3aed !important; /* purple-600 */
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2) !important;
+}
+
+.admin-dark-input::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* Dark theme for buttons */
+.admin-dark-button {
+  background-color: #374151 !important; /* gray-700 */
+  border-color: #4b5563 !important; /* gray-600 */
+  color: #f9fafb !important; /* gray-50 */
+}
+
+.admin-dark-button:hover {
+  background-color: #4b5563 !important; /* gray-600 */
+}
+
+.admin-dark-button.primary {
+  background-color: #7c3aed !important; /* purple-600 */
+  border-color: #7c3aed !important;
+  color: #ffffff !important;
+}
+
+.admin-dark-button.primary:hover {
+  background-color: #6d28d9 !important; /* purple-700 */
+}
+
+/* Dark theme for text */
+.admin-dark-text {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+.admin-dark-text-muted {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* Dark theme for borders */
+.admin-dark-border {
+  border-color: #374151 !important; /* gray-700 */
+}
+
+/* Dark theme for backgrounds */
+.admin-dark-bg {
+  background-color: #111827 !important; /* gray-900 */
+}
+
+.admin-dark-bg-secondary {
+  background-color: #1f2937 !important; /* gray-800 */
+}

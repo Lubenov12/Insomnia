@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Enable experimental features for better performance
   experimental: {
-    optimizePackageImports: ["framer-motion", "@supabase/supabase-js"],
+    optimizePackageImports: ["@supabase/supabase-js"],
   },
 
   // Webpack configuration to handle deprecation warnings
@@ -52,17 +52,7 @@ const nextConfig: NextConfig = {
   // Compression and optimization
   compress: true,
 
-  // Bundle analyzer (optional for development)
-  ...(process.env.ANALYZE === "true" && {
-    webpack: (config) => {
-      config.plugins.push(
-        new (require("@next/bundle-analyzer")({
-          enabled: true,
-        }))()
-      );
-      return config;
-    },
-  }),
+  // Bundle analyzer removed to reduce dependencies
 
   // Performance optimizations
   poweredByHeader: false,

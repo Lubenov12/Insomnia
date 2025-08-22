@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
 export default function Hero() {
@@ -24,30 +25,53 @@ export default function Hero() {
     }
   }, [searchParams]);
 
-    // Simple and fast animation timing
+  // Simple and fast animation timing
   useEffect(() => {
     // Immediate visibility
     setIsVisible(true);
     // Text animation slightly delayed
     const textTimer = setTimeout(() => setIsTextVisible(true), 300);
 
-    // Simple video loading - let browser handle it naturally
+    // Enhanced video loading with better error handling
     const videos = [videoRef.current, backgroundVideoRef.current];
     videos.forEach((video) => {
       if (video) {
         // Set essential attributes once
         video.setAttribute("webkit-playsinline", "true");
         video.setAttribute("playsinline", "true");
-        
-        // Simple autoplay with one fallback
-        video.play().catch(() => {
-          // Only retry on first user interaction
-          const playOnInteraction = () => {
-            video.play().catch(() => {});
-            document.removeEventListener("click", playOnInteraction);
-          };
-          document.addEventListener("click", playOnInteraction, { once: true });
-        });
+        video.setAttribute("muted", "true");
+        video.setAttribute("loop", "true");
+
+        // Try to load the video first
+        video.load();
+
+        // Simple autoplay with multiple fallbacks
+        const playVideo = async () => {
+          try {
+            await video.play();
+          } catch (error) {
+            // Set up click-to-play fallback
+            const playOnInteraction = () => {
+              video.play().catch(() => {
+                // Silent fail for user interaction
+              });
+              document.removeEventListener("click", playOnInteraction);
+              document.removeEventListener("touchstart", playOnInteraction);
+            };
+            document.addEventListener("click", playOnInteraction, {
+              once: true,
+            });
+            document.addEventListener("touchstart", playOnInteraction, {
+              once: true,
+            });
+          }
+        };
+
+        // Try autoplay immediately
+        playVideo();
+
+        // Also try when video is loaded
+        video.addEventListener("loadeddata", playVideo, { once: true });
       }
     });
 
@@ -171,6 +195,22 @@ export default function Hero() {
           {/* Hero Overlay Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center z-30 px-4">
             <div className="text-center max-w-4xl mx-auto">
+              {/* Logo */}
+              <div
+                className={`mb-8 transition-all duration-1000 ease-out ${
+                  isTextVisible ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <Image
+                  src="/img/file.svg"
+                  alt="Insomnia Logo"
+                  width={120}
+                  height={120}
+                  className="h-24 w-24 md:h-32 md:w-32 mx-auto drop-shadow-2xl object-contain"
+                  priority
+                />
+              </div>
+
               {/* Main Headline */}
               <h1
                 className={`text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 tracking-tight transition-all duration-1000 ease-out ${
@@ -302,12 +342,6 @@ export default function Hero() {
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Optional text overlay for mobile */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center text-white opacity-80 md:hidden">
-            <h2 className="text-lg font-semibold">INSOMNIA</h2>
-            <p className="text-sm">Открийте стила си</p>
           </div>
         </div>
       </div>

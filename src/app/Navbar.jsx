@@ -4,6 +4,7 @@ import { Oswald } from "next/font/google";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 
 const oswald = Oswald({
   subsets: ["latin"],
@@ -14,16 +15,19 @@ const oswald = Oswald({
 
 // Memoized SVG components for better performance
 const LogoIcon = memo(() => (
-  <svg
-    width="100"
-    height="100"
-    viewBox="0 0 1821 1730"
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-12 w-12 mr-3 rounded-lg shadow-lg transition-transform duration-300 hover:scale-105 bg-white"
-    style={{ display: "inline-block", verticalAlign: "middle" }}
-  >
-    <path d="M483.71,1384.19l0,-1117.03l514.254,0l231.924,435.648l0,-435.648l107.235,0l0,1119.23l-140.09,-0l0,-0.317l-0.331,0.317l-279.583,-292.139l0.509,-0.487l-0.509,-0l-0,-404.755l-332.876,695.183l-100.533,0Zm397.245,-1018.73l-296.712,0l0,761.498l296.712,-619.659l0,-141.839Zm348.933,572.098l-231.924,-435.648l-0,550.126l231.924,242.34l0,-356.818Z" />
-  </svg>
+  <div className="flex items-center">
+    <Image
+      src="/img/file.svg"
+      alt="Insomnia Logo"
+      width={48}
+      height={48}
+      className="h-12 w-12 mr-3 transition-transform duration-300 hover:scale-105 object-contain"
+      priority
+    />
+    <span className="text-2xl font-bold tracking-widest text-white">
+      ИNSOMNИA
+    </span>
+  </div>
 ));
 
 LogoIcon.displayName = "LogoIcon";
@@ -172,14 +176,61 @@ const LogoutIcon = memo(() => (
 
 LogoutIcon.displayName = "LogoutIcon";
 
+// Cart Badge Component
+const CartBadge = memo(({ count, className = "" }) => {
+  if (count === 0) return null;
+
+  return (
+    <>
+      {/* Outer glow ring */}
+      <div
+        className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-r from-purple-500/30 to-pink-500/30 blur-sm animate-pulse"
+        style={{ zIndex: 50 }}
+      ></div>
+
+      {/* Main badge with gradient and border */}
+      <span
+        className="absolute -top-1 -right-1 bg-gradient-to-br from-purple-600 via-purple-500 to-indigo-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-xl border border-purple-400/40 backdrop-blur-sm transform hover:scale-110 transition-all duration-300 hover:shadow-purple-500/50"
+        style={{ zIndex: 51 }}
+      >
+        {count > 99 ? "99+" : count}
+      </span>
+
+      {/* Inner highlight */}
+      <div
+        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-white/20 to-transparent pointer-events-none"
+        style={{ zIndex: 52 }}
+      ></div>
+    </>
+  );
+});
+
+CartBadge.displayName = "CartBadge";
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cartCount, setCartCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  // Prevent hydration mismatch by only rendering after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Check authentication status
   useEffect(() => {
+    if (!mounted) return;
+
+    // Add timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     // Check for existing session
     const checkAuth = async () => {
       try {
@@ -197,13 +248,11 @@ export default function Navbar() {
               sessionData.expires_at &&
               new Date(sessionData.expires_at * 1000) > new Date()
             ) {
-              console.log("Using stored session data");
               setUser(userData);
               setLoading(false);
               return;
             }
           } catch (e) {
-            console.log("Invalid stored session data, clearing...");
             localStorage.removeItem("user");
             localStorage.removeItem("session");
           }
@@ -214,8 +263,6 @@ export default function Navbar() {
           data: { session },
         } = await supabase.auth.getSession();
 
-        console.log("Initial session check:", session?.user?.id);
-
         if (session?.user) {
           // Fetch user profile
           const { data: userProfile } = await supabase
@@ -224,7 +271,6 @@ export default function Navbar() {
             .eq("id", session.user.id)
             .single();
 
-          console.log("Initial user profile:", userProfile);
           const userData = userProfile || {
             id: session.user.id,
             first_name: session.user.email?.split("@")[0] || "User",
@@ -276,7 +322,6 @@ export default function Navbar() {
             sessionData.expires_at &&
             new Date(sessionData.expires_at * 1000) > new Date()
           ) {
-            console.log("Storage change detected, updating user state");
             setUser(userData);
           }
         } catch (e) {
@@ -312,7 +357,6 @@ export default function Navbar() {
 
           if (timeUntilExpiry < 300) {
             // Refresh if less than 5 minutes until expiry
-            console.log("Refreshing session...");
             const {
               data: { session: newSession },
             } = await supabase.auth.refreshSession();
@@ -342,8 +386,6 @@ export default function Navbar() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.id);
-
       if (event === "SIGNED_IN" && session?.user) {
         setLoading(true);
         try {
@@ -354,7 +396,6 @@ export default function Navbar() {
             .eq("id", session.user.id)
             .single();
 
-          console.log("User profile fetched after sign in:", userProfile);
           const userData = userProfile || {
             id: session.user.id,
             first_name: session.user.email?.split("@")[0] || "User",
@@ -408,9 +449,10 @@ export default function Navbar() {
       subscription.unsubscribe();
       clearInterval(refreshInterval);
       clearInterval(storageCheckInterval);
+      clearTimeout(loadingTimeout);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, []);
+  }, [mounted]);
 
   // Logout function
   const handleLogout = useCallback(async () => {
@@ -489,16 +531,119 @@ export default function Navbar() {
     }
   }, [router, user]);
 
+  // Function to get cart count from localStorage
+  const getCartCount = useCallback(() => {
+    try {
+      const cartData = localStorage.getItem("insomnia_cart");
+      if (!cartData) return 0;
+
+      const cart = JSON.parse(cartData);
+      return cart.reduce((total, item) => total + (item.quantity || 0), 0);
+    } catch (error) {
+      console.error("Error reading cart:", error);
+      return 0;
+    }
+  }, []);
+
+  // Function to update cart count
+  const updateCartCount = useCallback(() => {
+    setCartCount(getCartCount());
+  }, [getCartCount]);
+
+  // Add cart tracking useEffect
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Initial cart count
+    updateCartCount();
+
+    // Listen for storage changes (when cart is updated in another tab)
+    const handleStorageChange = (e) => {
+      if (e.key === "insomnia_cart") {
+        updateCartCount();
+      }
+    };
+
+    // Listen for custom events (when cart is updated programmatically)
+    const handleCartUpdate = () => {
+      updateCartCount();
+    };
+
+    // Listen for inventory updates (when cart needs refresh)
+    const handleInventoryUpdate = () => {
+      setTimeout(updateCartCount, 100); // Small delay to ensure cart is updated
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    window.addEventListener("inventoryUpdated", handleInventoryUpdate);
+
+    // Update cart count periodically as fallback
+    const interval = setInterval(updateCartCount, 1000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("cartUpdated", handleCartUpdate);
+      window.removeEventListener("inventoryUpdated", handleInventoryUpdate);
+      clearInterval(interval);
+    };
+  }, [updateCartCount, mounted]);
+
   const handleCartClick = useCallback(() => {
     router.push("/cart");
   }, [router]);
 
-  // Debug log to see current user state (commented out to prevent console spam)
-  // console.log("Navbar render - user:", user, "loading:", loading);
+  // Don't render until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <nav
+        className={`fixed top-0 left-0 w-full z-40 bg-black text-white ${oswald.variable} font-oswald transition-all duration-700`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Left: Logo */}
+            <Link
+              href="/"
+              className="flex-shrink-0 flex items-center"
+              style={{ textDecoration: "none" }}
+            >
+              <LogoIcon />
+            </Link>
+
+            {/* Center: Nav Links */}
+            <div className="hidden md:flex flex-1 justify-center">
+              <Link
+                href="/clothes"
+                className="mx-4 text-lg font-bold hover:text-gray-300 transition-colors cursor-pointer"
+              >
+                Дрехи
+              </Link>
+            </div>
+
+            {/* Right: Loading state */}
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            </div>
+
+            {/* Mobile Hamburger */}
+            <div className="flex md:hidden">
+              <button
+                onClick={handleMobileToggle}
+                className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                aria-label="Open main menu"
+              >
+                <HamburgerIcon isOpen={mobileOpen} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav
-      className={`fixed top-0 left-0 w-full z-50 bg-black text-white ${oswald.variable} font-oswald`}
+      className={`fixed top-0 left-0 w-full z-40 bg-black text-white ${oswald.variable} font-oswald transition-all duration-700`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -509,7 +654,6 @@ export default function Navbar() {
             style={{ textDecoration: "none" }}
           >
             <LogoIcon />
-            <span className="text-2xl font-bold tracking-widest">INSOMNIA</span>
           </Link>
 
           {/* Center: Nav Links */}
@@ -542,8 +686,9 @@ export default function Navbar() {
                   onClick={handleCartClick}
                 >
                   <CartIcon />
+                  <CartBadge count={cartCount} />
                   <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                    Количка
+                    Количка {cartCount > 0 && `(${cartCount})`}
                   </span>
                 </button>
                 <button
@@ -576,8 +721,9 @@ export default function Navbar() {
                   onClick={handleCartClick}
                 >
                   <CartIcon />
+                  <CartBadge count={cartCount} />
                   <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                    Количка
+                    Количка {cartCount > 0 && `(${cartCount})`}
                   </span>
                 </button>
               </>
@@ -624,8 +770,13 @@ export default function Navbar() {
                 aria-label="Количка"
                 onClick={handleCartClick}
               >
-                <CartIcon />
-                <span className="text-base text-white ml-3">Количка</span>
+                <div className="relative">
+                  <CartIcon />
+                  <CartBadge count={cartCount} />
+                </div>
+                <span className="text-base text-white ml-3">
+                  Количка {cartCount > 0 && `(${cartCount})`}
+                </span>
               </button>
               <button
                 className="flex items-center w-full p-2 cursor-pointer border-t border-gray-600 pt-4"
@@ -654,8 +805,13 @@ export default function Navbar() {
                 aria-label="Количка"
                 onClick={handleCartClick}
               >
-                <CartIcon />
-                <span className="text-base text-white ml-3">Количка</span>
+                <div className="relative">
+                  <CartIcon />
+                  <CartBadge count={cartCount} />
+                </div>
+                <span className="text-base text-white ml-3">
+                  Количка {cartCount > 0 && `(${cartCount})`}
+                </span>
               </button>
             </div>
           )}

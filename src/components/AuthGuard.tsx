@@ -38,13 +38,13 @@ export default function AuthGuard({
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("AuthGuard: Auth state changed:", event, session?.user?.id);
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        // Small delay to ensure state is properly established
-        setTimeout(() => {
-          router.replace(redirectTo);
-        }, 100);
+        setUser(session.user);
+        setLoading(false);
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+        setLoading(false);
       }
     });
 

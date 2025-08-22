@@ -11,3 +11,4 @@ export {
 export { Label } from "./label";
 export { Badge, badgeVariants } from "./badge";
 export { Separator } from "./separator";
+export { Textarea } from "./textarea";

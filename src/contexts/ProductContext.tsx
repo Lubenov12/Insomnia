@@ -15,7 +15,6 @@ export type Product = {
   description: string;
   price: number;
   image_url: string;
-  stock_quantity: number;
   category: string;
   created_at: string;
 };
@@ -219,6 +218,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
       filters: ProductFilters = {}
     ) => {
       // Check if we should skip fetching (cache is valid and we have data)
+      // BUT allow fetching if it's the first page and we have no products
       if (
         page === 1 &&
         isCacheValid &&
@@ -244,12 +244,32 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
           ...(filters.search && { search: filters.search }),
         });
 
-        const response = await fetch(`/api/products?${params}`);
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        const response = await fetch(`/api/products?${params}`, {
+          signal: controller.signal,
+          headers: {
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        });
+
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
-          throw new Error(`Failed to fetch products: ${response.status}`);
+          throw new Error(
+            `Failed to fetch products: ${response.status} ${response.statusText}`
+          );
         }
 
         const data = await response.json();
+
+        // Validate response data
+        if (!data || !Array.isArray(data.products)) {
+          throw new Error("Invalid response format from products API");
+        }
 
         if (page === 1) {
           dispatch({
@@ -266,7 +286,17 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Failed to fetch products";
-        dispatch({ type: "SET_ERROR", payload: errorMessage });
+
+        // If it's a network error, provide a more user-friendly message
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+          dispatch({
+            type: "SET_ERROR",
+            payload:
+              "Network error. Please check your connection and try again.",
+          });
+        } else {
+          dispatch({ type: "SET_ERROR", payload: errorMessage });
+        }
       }
     },
     [isCacheValid, state.products.length, state.filters, state.loading]

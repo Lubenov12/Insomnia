@@ -67,6 +67,16 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    discountAmount: number;
+    message: string;
+  } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
   // Load from localStorage on mount
   useEffect(() => {
     try {
@@ -92,6 +102,9 @@ export default function CartPage() {
 
     try {
       localStorage.setItem(LOCAL_KEY, JSON.stringify(items));
+
+      // Trigger cart update event for navbar
+      window.dispatchEvent(new CustomEvent("cartUpdated"));
     } catch (error) {
       console.error("Failed to save to localStorage:", error);
     }
@@ -159,12 +172,17 @@ export default function CartPage() {
     }
   }, [items, getProductById, getProductDetail, fetchProductDetail]);
 
-  const total = useMemo(() => {
+  const subtotal = useMemo(() => {
     return enriched.reduce((sum, it) => {
       const price = it.product?.price ?? 0;
       return sum + price * it.quantity;
     }, 0);
   }, [enriched]);
+
+  const total = useMemo(() => {
+    const discountAmount = appliedPromo?.discountAmount || 0;
+    return Math.max(0, subtotal - discountAmount);
+  }, [subtotal, appliedPromo]);
 
   const updateQty = useCallback(
     async (product_id: string, size: string, quantity: number) => {
@@ -172,9 +190,14 @@ export default function CartPage() {
       const productDetail = getProductDetail(product_id);
       const availableStock = productDetail?.size_availability?.[size] || 0;
 
+      // Ensure quantity is within valid range
+      const validQuantity = Math.max(1, Math.min(quantity, availableStock));
+
       if (quantity > availableStock && availableStock > 0) {
-        alert(`Наличност: само ${availableStock} бр. за размер ${size}`);
-        return;
+        alert(
+          `Наличност: само ${availableStock} бр. за размер ${size}. Количеството е коригирано.`
+        );
+        quantity = validQuantity;
       }
 
       setItems((prev) => {
@@ -183,8 +206,8 @@ export default function CartPage() {
           (i) => i.product_id === product_id && i.size === size
         );
         if (idx !== -1) {
-          if (quantity <= 0) copy.splice(idx, 1);
-          else copy[idx] = { ...copy[idx], quantity };
+          if (validQuantity <= 0) copy.splice(idx, 1);
+          else copy[idx] = { ...copy[idx], quantity: validQuantity };
         }
         return copy;
       });
@@ -193,7 +216,7 @@ export default function CartPage() {
         await fetch(`/api/cart`, {
           method: "PUT",
           headers: clientAuth.getAuthHeaders(),
-          body: JSON.stringify({ product_id, size, quantity }),
+          body: JSON.stringify({ product_id, size, quantity: validQuantity }),
         });
       } catch {}
     },
@@ -285,6 +308,60 @@ export default function CartPage() {
     },
     [items, getProductDetail]
   );
+
+  // Promo code functions
+  const applyPromoCode = useCallback(async () => {
+    if (!promoCode.trim()) {
+      setPromoError("Моля, въведете промо код");
+      return;
+    }
+
+    setPromoLoading(true);
+    setPromoError(null);
+
+    try {
+      const response = await fetch("/api/promo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          code: promoCode.trim(),
+          orderAmount: subtotal,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Грешка при проверка на кода");
+      }
+
+      if (data.valid) {
+        setAppliedPromo({
+          code: promoCode.trim().toUpperCase(),
+          discountAmount: data.discountAmount,
+          message: data.message,
+        });
+        setPromoCode("");
+        setPromoError(null);
+      } else {
+        setPromoError(data.message || "Невалиден промо код");
+      }
+    } catch (error) {
+      setPromoError(
+        error instanceof Error ? error.message : "Грешка при проверка на кода"
+      );
+    } finally {
+      setPromoLoading(false);
+    }
+  }, [promoCode, subtotal]);
+
+  const removePromoCode = useCallback(() => {
+    setAppliedPromo(null);
+    setPromoCode("");
+    setPromoError(null);
+  }, []);
 
   if (loading) {
     return <CartSkeleton />;
@@ -417,9 +494,24 @@ export default function CartPage() {
                       >
                         -
                       </button>
-                      <span className="px-4 py-2 text-gray-200 select-none">
-                        {item.quantity}
-                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={(() => {
+                          const productDetail = getProductDetail(
+                            item.product_id
+                          );
+                          return (
+                            productDetail?.size_availability?.[item.size] || 1
+                          );
+                        })()}
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const newQuantity = parseInt(e.target.value) || 1;
+                          updateQty(item.product_id, item.size, newQuantity);
+                        }}
+                        className="w-16 text-center bg-transparent text-gray-200 border-none outline-none focus:ring-0 px-2 py-2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
                       <button
                         className="px-3 py-2 text-white hover:bg-gray-700"
                         onClick={() =>
@@ -471,10 +563,90 @@ export default function CartPage() {
           ))}
 
           <div className="p-6">
-            <div className="flex items-center justify-between text-white text-lg font-bold">
-              <span>Общо:</span>
-              <span>{total} лв.</span>
+            {/* Promo Code Section */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Промо код
+              </h3>
+              {!appliedPromo ? (
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      value={promoCode}
+                      onChange={(e) =>
+                        setPromoCode(e.target.value.toUpperCase())
+                      }
+                      placeholder="Въведете промо код"
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      disabled={promoLoading}
+                    />
+                  </div>
+                  <button
+                    onClick={applyPromoCode}
+                    disabled={promoLoading || !promoCode.trim()}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-lg hover:from-purple-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    {promoLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Проверява...
+                      </>
+                    ) : (
+                      "Приложи"
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-green-400 font-semibold">
+                        ✅ {appliedPromo.code}
+                      </div>
+                      <div className="text-green-300 text-sm">
+                        {appliedPromo.message}
+                      </div>
+                    </div>
+                    <button
+                      onClick={removePromoCode}
+                      className="text-gray-400 hover:text-red-400 px-2 py-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {promoError && (
+                <div className="mt-3 text-red-400 text-sm">{promoError}</div>
+              )}
             </div>
+
+            {/* Order Summary */}
+            <div className="border-t border-gray-700 pt-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-gray-300">
+                  <span>Междинна сума:</span>
+                  <span>{subtotal.toFixed(2)} лв.</span>
+                </div>
+
+                {appliedPromo && (
+                  <div className="flex items-center justify-between text-green-400">
+                    <span>Отстъпка ({appliedPromo.code}):</span>
+                    <span>-{appliedPromo.discountAmount.toFixed(2)} лв.</span>
+                  </div>
+                )}
+
+                <div className="border-t border-gray-700 pt-2">
+                  <div className="flex items-center justify-between text-white text-xl font-bold">
+                    <span>Общо:</span>
+                    <span>{total.toFixed(2)} лв.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="mt-6 flex flex-col sm:flex-row gap-4">
               <Link
                 href="/clothes"

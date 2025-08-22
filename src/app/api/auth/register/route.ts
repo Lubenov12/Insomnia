@@ -6,236 +6,116 @@ import { ZodError } from "zod";
 // POST /api/auth/register - User registration
 export async function POST(request: NextRequest) {
   try {
-    console.log("Registration request received");
-
     let body;
     try {
       body = await request.json();
-      console.log("Request body:", JSON.stringify(body, null, 2));
     } catch (error) {
       console.error("JSON parse error:", error);
-      return NextResponse.json(
-        {
-          error:
-            "Възникна грешка при обработка на данните. Моля опитайте отново.",
-        },
-        { status: 400 }
-      );
+      throw new ValidationError("Invalid JSON in request body");
     }
 
+    // Validate required fields exist
     if (!body || typeof body !== "object") {
-      return NextResponse.json(
-        {
-          error:
-            "Възникна грешка при обработка на данните. Моля опитайте отново.",
-        },
-        { status: 400 }
+      throw new ValidationError("Request body must be a valid object");
+    }
+
+    const validatedData = userRegistrationSchema.parse(body);
+
+    // Additional business logic validation
+    if (validatedData.password !== validatedData.confirmPassword) {
+      throw new ValidationError(
+        "Passwords do not match",
+        { password: validatedData.password },
+        "password"
       );
     }
 
-    console.log("Validating data...");
-    let validatedData;
-    try {
-      validatedData = userRegistrationSchema.parse(body);
-      console.log(
-        "Validation successful:",
-        JSON.stringify(validatedData, null, 2)
-      );
-    } catch (validationError: unknown) {
-      console.error("Validation error:", validationError);
+    // Check if user with same email already exists
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", validatedData.email)
+      .single();
 
-      // Format validation errors for better user experience
-      if (validationError instanceof ZodError) {
-        const fieldErrors = validationError.issues.map((err) => ({
-          field: err.path.join("."),
-          message: err.message,
-        }));
-
-        return NextResponse.json(
-          {
-            error: "Моля проверете въведените данни",
-            details: fieldErrors,
-          },
-          { status: 400 }
-        );
-      }
-
-      return NextResponse.json(
-        { error: "Моля проверете въведените данни и опитайте отново" },
-        { status: 400 }
-      );
+    if (existingUser) {
+      throw new ConflictError("A user with this email already exists");
     }
 
-    // Check if user already exists (by email or phone)
-    let existingUser = null;
-
-    if (validatedData.email) {
-      const { data: emailUser, error: emailError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("email", validatedData.email)
-        .single();
-
-      if (emailError && emailError.code !== "PGRST116") {
-        console.error("Error checking email:", emailError);
-        return NextResponse.json(
-          {
-            error:
-              "Възникна грешка при проверка на email адреса. Моля опитайте отново.",
-          },
-          { status: 500 }
-        );
-      }
-      existingUser = emailUser;
-    }
-
-    if (!existingUser && validatedData.phone_number) {
-      const { data: phoneUser, error: phoneError } = await supabase
+    // Check if user with same phone number already exists
+    if (validatedData.phone_number) {
+      const { data: existingPhoneUser } = await supabase
         .from("users")
         .select("id")
         .eq("phone_number", validatedData.phone_number)
         .single();
 
-      if (phoneError && phoneError.code !== "PGRST116") {
-        console.error("Error checking phone:", phoneError);
-        return NextResponse.json(
-          {
-            error:
-              "Възникна грешка при проверка на телефонния номер. Моля опитайте отново.",
-          },
-          { status: 500 }
-        );
+      if (existingPhoneUser) {
+        throw new ConflictError("A user with this phone number already exists");
       }
-      existingUser = phoneUser;
     }
 
-    if (existingUser) {
-      return NextResponse.json(
-        {
-          error:
-            "Потребител с този email адрес или телефонен номер вече съществува",
-        },
-        { status: 409 }
-      );
-    }
-
-    // Register user with Supabase Auth (use email if available, otherwise use phone)
+    // Create Supabase Auth user
     const authEmail =
       validatedData.email || `${validatedData.phone_number}@insomnia.local`;
-
-    console.log("Creating Supabase Auth user with email:", authEmail);
-
-    // Create regular user account (NOT admin)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: authEmail,
       password: validatedData.password,
       options: {
         data: {
-          first_name: validatedData.first_name,
-          last_name: validatedData.last_name,
-          role: "user", // Explicitly set as regular user
+          name: validatedData.name,
+          phone_number: validatedData.phone_number,
         },
       },
     });
 
     if (authError) {
       console.error("Supabase Auth error:", authError);
-
-      if (authError.message.includes("already registered")) {
-        return NextResponse.json(
-          {
-            error:
-              "Потребител с този email адрес или телефонен номер вече съществува",
-          },
-          { status: 409 }
-        );
-      }
-
-      if (authError.message.includes("Password")) {
-        return NextResponse.json(
-          { error: "Паролата не отговаря на изискванията за сигурност" },
-          { status: 400 }
-        );
-      }
-
-      if (authError.message.includes("Email")) {
-        return NextResponse.json(
-          { error: "Невалиден email формат" },
-          { status: 400 }
-        );
-      }
-
-      return NextResponse.json(
-        { error: "Регистрацията неуспешна. Моля опитайте отново." },
-        { status: 400 }
+      throw new AuthenticationError(
+        authError.message || "Failed to create user account"
       );
     }
 
     if (!authData.user) {
-      return NextResponse.json(
-        {
-          error:
-            "Възникна техническа грешка при регистрацията. Моля опитайте отново.",
-        },
-        { status: 500 }
-      );
+      throw new AuthenticationError("Failed to create user account");
     }
 
-    // Create user profile in database using admin client (bypasses RLS)
-    console.log("Creating user profile in database...");
-    const { data: userProfile, error: profileError } = await supabaseAdmin
+    // Create user profile in database
+    const userProfileData = {
+      id: authData.user.id,
+      name: validatedData.name,
+      email: validatedData.email,
+      phone_number: validatedData.phone_number,
+      marketing_emails: validatedData.marketing_emails,
+    };
+
+    const { data: userProfile, error: profileError } = await supabase
       .from("users")
-      .insert([
-        {
-          id: authData.user.id,
-          first_name: validatedData.first_name,
-          last_name: validatedData.last_name,
-          email: authEmail, // Use the email used for auth (either real email or generated one)
-          phone_number: validatedData.phone_number || null,
-          created_at: new Date().toISOString(),
-        },
-      ])
+      .insert([userProfileData])
       .select()
       .single();
 
     if (profileError) {
       console.error("Error creating user profile:", profileError);
-
-      // If profile creation fails, we should clean up the auth user
-      // But for now, let's return an error and the user can try again
-      return NextResponse.json(
-        {
-          error:
-            "Акаунтът е създаден, но възникна грешка при създаването на профила. Моля опитайте да влезете в акаунта си.",
-        },
-        { status: 500 }
+      throw new DatabaseError(
+        "Failed to create user profile",
+        profileError.code,
+        profileError
       );
     }
 
-    console.log("User profile created successfully:", userProfile);
-
-    // Return success response
-    console.log("Registration successful, returning response...");
     return NextResponse.json(
       {
-        message: "Registration successful",
-        user: {
-          id: authData.user.id,
-          first_name: validatedData.first_name,
-          last_name: validatedData.last_name,
-          email: validatedData.email,
-          phone_number: validatedData.phone_number,
-          created_at: new Date().toISOString(),
-        },
-        session: authData.session,
+        message: "User registered successfully",
+        user: userProfile,
       },
-      { status: 201 }
+      {
+        status: 201,
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      }
     );
   } catch (error) {
-    console.error("Registration error caught:", error);
-    return NextResponse.json(
-      { error: "Възникна техническа грешка. Моля опитайте отново след малко." },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

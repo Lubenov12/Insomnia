@@ -224,9 +224,26 @@ export default function ProductPage() {
     (newQuantity: number) => {
       if (selectedSize && product) {
         const availableStock = product.size_availability?.[selectedSize] || 0;
-        if (newQuantity >= 1 && newQuantity <= availableStock) {
-          setQuantity(newQuantity);
-        }
+        // Ensure quantity is within valid range
+        const validQuantity = Math.max(
+          1,
+          Math.min(newQuantity, availableStock)
+        );
+        setQuantity(validQuantity);
+      }
+    },
+    [selectedSize, product]
+  );
+
+  // Handle direct quantity input
+  const handleQuantityInput = useCallback(
+    (value: string) => {
+      if (selectedSize && product) {
+        const numValue = parseInt(value) || 0;
+        const availableStock = product.size_availability?.[selectedSize] || 0;
+        // Ensure quantity is within valid range
+        const validQuantity = Math.max(1, Math.min(numValue, availableStock));
+        setQuantity(validQuantity);
       }
     },
     [selectedSize, product]
@@ -269,7 +286,7 @@ export default function ProductPage() {
 
           // Check if item already exists
           const existingItemIndex = cartItems.findIndex(
-            (item: any) =>
+            (item: { product_id: string; size: string }) =>
               item.product_id === product.id && item.size === selectedSize
           );
 
@@ -290,6 +307,9 @@ export default function ProductPage() {
           }
 
           localStorage.setItem(LOCAL_KEY, JSON.stringify(cartItems));
+
+          // Trigger cart update event for navbar
+          window.dispatchEvent(new CustomEvent("cartUpdated"));
         } catch (localStorageError) {
           console.warn("Failed to update localStorage:", localStorageError);
         }
@@ -333,17 +353,17 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black pt-32">
       {/* Product Section */}
-      <section className="bg-black py-8 md:py-16 px-4">
+      <section className="bg-black py-8 md:py-16 px-4 mt-8">
         <div className="w-full max-w-7xl mx-auto bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
           {/* Product Image */}
-          <div className="md:w-3/5 bg-gray-800 h-[420px] md:h-[640px] relative overflow-hidden rounded-l-2xl">
+          <div className="md:w-3/5 bg-gray-800 h-[420px] md:h-[800px] relative overflow-hidden rounded-l-2xl">
             <Image
               src={product.image_url}
               alt={product.name}
               fill
-              className="object-cover"
+              className="object-contain"
               sizes="(max-width: 768px) 100vw, 60vw"
               priority
             />
@@ -444,9 +464,19 @@ export default function ProductPage() {
                   <Minus className="w-4 h-4" />
                 </Button>
                 <div className="flex-1 text-center px-4 py-3">
-                  <span className="text-white text-lg font-semibold">
-                    {quantity}
-                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={
+                      selectedSize
+                        ? product.size_availability?.[selectedSize] || 0
+                        : 1
+                    }
+                    value={quantity}
+                    onChange={(e) => handleQuantityInput(e.target.value)}
+                    className="w-16 text-center bg-transparent text-white text-lg font-semibold border-none outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    disabled={!selectedSize}
+                  />
                 </div>
                 <Button
                   variant="ghost"

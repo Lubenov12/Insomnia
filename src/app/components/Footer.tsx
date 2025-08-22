@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -7,7 +8,17 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-white">INSOMNIA</h3>
+            <div className="flex items-center">
+              <Image
+                src="/img/file.svg"
+                alt="Insomnia Logo"
+                width={40}
+                height={40}
+                className="h-10 w-10 mr-3 object-contain"
+                priority
+              />
+              <h3 className="text-2xl font-bold text-white">INSOMNIA</h3>
+            </div>
             <p className="text-gray-400 text-sm leading-relaxed">
               Открийте стила си с нашата колекция от уникални дрехи. Създадени
               за тези, които не се страхуват да изразяват своята уникалност.
