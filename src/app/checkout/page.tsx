@@ -8,6 +8,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import Image from "next/image";
 import { clientAuth } from "@/lib/auth";
 
 const stripePromise = loadStripe(
@@ -422,7 +423,7 @@ function CheckoutForm() {
   const [success, setSuccess] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  // Removed unused clientSecret state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [availableCities, setAvailableCities] = useState<string[]>([]);
 
@@ -448,10 +449,12 @@ function CheckoutForm() {
       setIsLoggedIn(true);
 
       // Auto-fill the form with user data
+      const userRegion = user.region ?? "";
+      const userCity = user.city ?? "";
       setForm({
         name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),
-        region: user.region || "",
-        city: user.city || "",
+        region: userRegion,
+        city: userCity,
         address: user.address || "",
         phone: user.phone_number || "",
         email: user.email || "",
@@ -459,12 +462,13 @@ function CheckoutForm() {
 
       // Set available cities if region is available
       if (
-        user.region &&
-        bulgarianCities[user.region as keyof typeof bulgarianCities]
+        userRegion &&
+        bulgarianCities[userRegion as keyof typeof bulgarianCities]
       ) {
-        setAvailableCities(
-          bulgarianCities[user.region as keyof typeof bulgarianCities]
+        const uniqueCities = Array.from(
+          new Set(bulgarianCities[userRegion as keyof typeof bulgarianCities])
         );
+        setAvailableCities(uniqueCities);
       }
     }
   }, []);
@@ -475,22 +479,20 @@ function CheckoutForm() {
       form.region &&
       bulgarianCities[form.region as keyof typeof bulgarianCities]
     ) {
-      setAvailableCities(
-        bulgarianCities[form.region as keyof typeof bulgarianCities]
+      // Remove duplicates using Set
+      const uniqueCities = Array.from(
+        new Set(bulgarianCities[form.region as keyof typeof bulgarianCities])
       );
+      setAvailableCities(uniqueCities);
       // Reset city if it's not in the new region
-      if (
-        !bulgarianCities[form.region as keyof typeof bulgarianCities].includes(
-          form.city
-        )
-      ) {
+      if (!uniqueCities.includes(form.city)) {
         setForm((prev) => ({ ...prev, city: "" }));
       }
     } else {
       setAvailableCities([]);
       setForm((prev) => ({ ...prev, city: "" }));
     }
-  }, [form.region]);
+  }, [form.region, form.city]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -782,14 +784,38 @@ function CheckoutForm() {
             </h2>
             <div className="space-y-4">
               {cart.map((item, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <div>
-                    <div className="text-white">{item.product_name}</div>
-                    <div className="text-gray-400 text-sm">
-                      Размер: {item.size} | Количество: {item.quantity}
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative w-24 h-24 bg-gray-800 rounded-lg overflow-hidden flex-shrink-0">
+                      {item.product_image ? (
+                        <Image
+                          src={item.product_image}
+                          alt={item.product_name || "Продукт"}
+                          width={96}
+                          height={96}
+                          quality={90}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div
+                        className="text-white truncate"
+                        title={item.product_name}
+                      >
+                        {item.product_name}
+                      </div>
+                      <div className="text-gray-400 text-sm truncate">
+                        Размер: {item.size} | Количество: {item.quantity}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-purple-400 font-bold">
+                  <div className="text-purple-400 font-bold flex-shrink-0">
                     {((item.product_price || 0) * item.quantity).toFixed(2)} лв.
                   </div>
                 </div>
@@ -872,7 +898,7 @@ function CheckoutForm() {
                     value={form.phone}
                     onChange={handleChange}
                     required
-                    placeholder="0888 123 456"
+                    placeholder="088 123 4567"
                     className="w-full rounded-lg bg-gray-800 border border-gray-700 text-white px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-gray-400"
                   />
                 </div>
@@ -907,26 +933,31 @@ function CheckoutForm() {
                   >
                     Град / Населено място *
                   </label>
-                  <input
+                  <select
                     id="city"
                     name="city"
                     value={form.city}
                     onChange={handleChange}
                     required
-                    placeholder="Въведете град или населено място"
-                    className="w-full rounded-lg bg-gray-800 border border-gray-700 text-white px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-gray-400"
-                    list="cities-list"
-                  />
-                  <datalist id="cities-list">
-                    {availableCities.map((city) => (
-                      <option key={city} value={city} />
+                    disabled={!form.region || availableCities.length === 0}
+                    className="w-full rounded-lg bg-gray-800 border border-gray-700 text-white px-4 py-3 outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-900"
+                  >
+                    <option value="">
+                      {!form.region
+                        ? "Първо изберете област"
+                        : availableCities.length === 0
+                        ? "Няма налични градове"
+                        : "Изберете град"}
+                    </option>
+                    {availableCities.map((city, index) => (
+                      <option key={`${city}-${index}`} value={city}>
+                        {city}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
                   {form.region && availableCities.length > 0 && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Популярни градове:{" "}
-                      {availableCities.slice(0, 5).join(", ")}
-                      {availableCities.length > 5 && "..."}
+                      Налични градове: {availableCities.length}
                     </p>
                   )}
                 </div>

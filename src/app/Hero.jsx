@@ -82,7 +82,7 @@ export default function Hero() {
 
   return (
     <section
-      className={`w-full h-screen bg-black relative overflow-hidden transition-opacity duration-1000 ${
+      className={`hero-section w-full h-screen bg-black relative overflow-hidden transition-opacity duration-1000 ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
       style={{

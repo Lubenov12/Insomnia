@@ -5,7 +5,7 @@ import {
   formatAmountForStripe,
   validateStripeConfig,
 } from "@/lib/stripe";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 
 const paymentRequestSchema = z.object({
   amount: z.number().min(1),
@@ -15,6 +15,8 @@ const paymentRequestSchema = z.object({
     email: z.string().email(),
     phone: z.string().min(5),
     address: z.string().min(5),
+    region: z.string().optional().default(""),
+    city: z.string().optional().default(""),
   }),
   items: z
     .array(
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Validate stock availability before creating order
     for (const item of data.items) {
-      const { data: variant, error: variantError } = await supabase
+      const { data: variant, error: variantError } = await supabaseAdmin
         .from("product_variants")
         .select("stock_quantity")
         .eq("product_id", item.product_id)
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
     const total = subtotal + data.shipping.cost;
 
     // Create order in database first
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert([
         {
@@ -84,6 +86,8 @@ export async function POST(request: NextRequest) {
           customer_address: data.customer.address,
           customer_phone: data.customer.phone,
           customer_email: data.customer.email,
+          customer_region: data.customer.region || "",
+          customer_city: data.customer.city || "",
           total_amount: total,
           status: "pending_payment",
           created_at: new Date().toISOString(),
@@ -110,7 +114,7 @@ export async function POST(request: NextRequest) {
       size: item.size,
     }));
 
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = await supabaseAdmin
       .from("order_items")
       .insert(orderItems);
 
@@ -147,7 +151,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Update order with Stripe payment intent ID
-    await supabase
+    await supabaseAdmin
       .from("orders")
       .update({ payment_intent_id: paymentIntent.id })
       .eq("id", order.id);
@@ -207,7 +211,7 @@ export async function GET(request: NextRequest) {
     // Update order status and inventory if payment succeeded
     if (paymentIntent.status === "succeeded") {
       try {
-        const { data, error } = await supabase.rpc(
+        const { data, error } = await supabaseAdmin.rpc(
           "confirm_order_with_inventory_update",
           { p_payment_intent_id: paymentIntent.id }
         );

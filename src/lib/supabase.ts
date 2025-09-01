@@ -49,6 +49,10 @@ export interface User {
   email?: string;
   phone_number?: string;
   address?: string;
+  region?: string;
+  city?: string;
+  first_name?: string;
+  last_name?: string;
   marketing_emails?: boolean;
   created_at: string;
 }
@@ -71,11 +75,25 @@ export interface UserLogin {
 
 export interface Order {
   id: string;
-  user_id: string;
-  status: "pending" | "shipped" | "delivered" | "cancelled";
+  user_id: string | null;
+  status:
+    | "pending"
+    | "pending_payment"
+    | "paid"
+    | "shipped"
+    | "delivered"
+    | "cancelled";
   total_amount: number;
   payment_method: "card" | "cod";
   created_at: string;
+  guest?: boolean;
+  customer_name?: string;
+  customer_address?: string;
+  customer_phone?: string;
+  customer_email?: string;
+  customer_region?: string;
+  customer_city?: string;
+  payment_intent_id?: string | null;
 }
 
 export interface OrderItem {
@@ -84,6 +102,8 @@ export interface OrderItem {
   product_id: string;
   quantity: number;
   unit_price: number;
+  product_name?: string;
+  size?: string;
 }
 
 export interface CartItem {

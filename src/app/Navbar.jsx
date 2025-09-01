@@ -213,12 +213,24 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [lightTheme, setLightTheme] = useState(false);
   const router = useRouter();
 
   // Prevent hydration mismatch by only rendering after mount
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Apply data-theme attribute for light/red theme
+  useEffect(() => {
+    if (!mounted) return;
+    const root = document.documentElement;
+    if (lightTheme) {
+      root.setAttribute("data-theme", "light-red");
+    } else {
+      root.removeAttribute("data-theme");
+    }
+  }, [lightTheme, mounted]);
 
   // Check authentication status
   useEffect(() => {
@@ -668,6 +680,13 @@ export default function Navbar() {
 
           {/* Right: Icon Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Theme toggle */}
+            <button
+              className="px-3 py-2 rounded-lg border border-gray-700 text-sm hover:bg-gray-800"
+              onClick={() => setLightTheme((v) => !v)}
+            >
+              {lightTheme ? "Dark Theme" : "Light/Red Theme"}
+            </button>
             {loading ? (
               <div className="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
             ) : user ? (

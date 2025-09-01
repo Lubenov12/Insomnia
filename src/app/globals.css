@@ -310,3 +310,107 @@ html,
 body {
   background-color: #000000;
 }
+
+/* Lightweight white/red theme trial overrides */
+:root {
+  --trial-bg: #fff;
+  --trial-surface: #fff;
+  --trial-surface-2: #f7f7f7;
+  --trial-fg: #0a0a0a;
+  --trial-muted: #6b7280;
+  --trial-border: #e5e7eb;
+  --trial-brand: #ff0600;
+  --trial-brand-dark: #cc0500;
+}
+
+/* Map commonly used Tailwind classes to trial theme colors (scoped to opt-in attribute) */
+[data-theme="light-red"] .bg-black:not(.hero-section *) {
+  background-color: var(--trial-bg) !important;
+}
+[data-theme="light-red"] .bg-gray-900:not(.hero-section *) {
+  background-color: var(--trial-surface) !important;
+}
+[data-theme="light-red"] .bg-gray-800:not(.hero-section *) {
+  background-color: var(--trial-surface-2) !important;
+}
+[data-theme="light-red"] .border-gray-700:not(.hero-section *) {
+  border-color: var(--trial-border) !important;
+}
+[data-theme="light-red"] .border-gray-800:not(.hero-section *) {
+  border-color: var(--trial-border) !important;
+}
+[data-theme="light-red"] .text-white:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] .text-gray-100:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] .text-gray-200:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] .text-gray-300:not(.hero-section *) {
+  color: #374151 !important;
+}
+[data-theme="light-red"] .text-gray-400:not(.hero-section *) {
+  color: var(--trial-muted) !important;
+}
+[data-theme="light-red"] .text-gray-500:not(.hero-section *) {
+  color: var(--trial-muted) !important;
+}
+[data-theme="light-red"] .text-purple-400:not(.hero-section *) {
+  color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .bg-purple-600:not(.hero-section *) {
+  background-color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .hover\:bg-purple-700:hover:not(.hero-section *) {
+  background-color: var(--trial-brand-dark) !important;
+}
+[data-theme="light-red"] .hover\:bg-gray-800:hover:not(.hero-section *) {
+  background-color: var(--trial-surface-2) !important;
+}
+/* Additional color mappings for text readability */
+[data-theme="light-red"] .bg-red-900:not(.hero-section *) {
+  background-color: #fee2e2 !important;
+}
+[data-theme="light-red"] .text-red-400:not(.hero-section *) {
+  color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .text-green-400:not(.hero-section *) {
+  color: #16a34a !important;
+}
+[data-theme="light-red"] .text-green-300:not(.hero-section *) {
+  color: #22c55e !important;
+}
+[data-theme="light-red"] .bg-green-900:not(.hero-section *) {
+  background-color: #f0fdf4 !important;
+}
+[data-theme="light-red"] .border-green-500:not(.hero-section *) {
+  border-color: #22c55e !important;
+}
+[data-theme="light-red"] .border-red-500:not(.hero-section *) {
+  border-color: var(--trial-brand) !important;
+}
+
+/* Gradients swapped to red */
+[data-theme="light-red"] .from-purple-600 {
+  --tw-gradient-from: var(--trial-brand) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(255 6 0 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+[data-theme="light-red"] .to-indigo-700 {
+  --tw-gradient-to: var(--trial-brand-dark) var(--tw-gradient-to-position) !important;
+}
+[data-theme="light-red"] .hover\:from-purple-700:hover {
+  --tw-gradient-from: var(--trial-brand-dark) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(204 5 0 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+[data-theme="light-red"] .hover\:to-indigo-800:hover {
+  --tw-gradient-to: var(--trial-brand-dark) var(--tw-gradient-to-position) !important;
+}
+
+/* Focus ring */
+.focus\:ring-purple-500:focus {
+  --tw-ring-color: var(--trial-brand) !important;
+}

@@ -57,6 +57,7 @@ type EnrichedCartItem = LocalCartItem & {
 };
 
 const LOCAL_KEY = "insomnia_cart";
+const CART_CACHE_KEY = "insomnia_cart_enriched_cache";
 
 export default function CartPage() {
   const { getProductById, getProductDetail, fetchProductDetail } =
@@ -66,6 +67,14 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [usedCache, setUsedCache] = useState(false);
+
+  const cartSignature = useMemo(() => {
+    return items
+      .map((i) => `${i.product_id}:${i.size}:${i.quantity}`)
+      .sort()
+      .join("|");
+  }, [items]);
 
   // Promo code state
   const [promoCode, setPromoCode] = useState("");
@@ -112,6 +121,11 @@ export default function CartPage() {
 
   // Fetch product details for cart items and enrich them
   useEffect(() => {
+    // If we already hydrated from cache, skip fetching
+    if (usedCache) {
+      return;
+    }
+
     const enrichItems = async () => {
       const enrichedItems = await Promise.all(
         items.map(async (it) => {
@@ -163,14 +177,58 @@ export default function CartPage() {
         })
       );
       setEnriched(enrichedItems);
+
+      // Cache enriched result in sessionStorage to avoid refetch on back navigation
+      try {
+        sessionStorage.setItem(
+          CART_CACHE_KEY,
+          JSON.stringify({ signature: cartSignature, enriched: enrichedItems })
+        );
+      } catch {}
     };
 
     if (items.length > 0) {
       enrichItems();
     } else {
       setEnriched([]);
+      try {
+        sessionStorage.removeItem(CART_CACHE_KEY);
+      } catch {}
     }
-  }, [items, getProductById, getProductDetail, fetchProductDetail]);
+  }, [
+    items,
+    getProductById,
+    getProductDetail,
+    fetchProductDetail,
+    usedCache,
+    cartSignature,
+  ]);
+
+  // Try hydrate enriched items from session cache first to prevent refetch on back nav
+  useEffect(() => {
+    if (items.length === 0) {
+      setUsedCache(false);
+      return;
+    }
+    try {
+      const raw = sessionStorage.getItem(CART_CACHE_KEY);
+      if (!raw) {
+        setUsedCache(false);
+        return;
+      }
+      const cached = JSON.parse(raw);
+      if (
+        cached &&
+        cached.signature === cartSignature &&
+        Array.isArray(cached.enriched)
+      ) {
+        setEnriched(cached.enriched);
+        setUsedCache(true);
+        return;
+      }
+    } catch {}
+    setUsedCache(false);
+  }, [cartSignature, items.length]);
 
   const subtotal = useMemo(() => {
     return enriched.reduce((sum, it) => {
@@ -420,9 +478,10 @@ export default function CartPage() {
                   <Image
                     src={item.product.image_url}
                     alt={item.product?.name || "Продукт"}
-                    fill
-                    className="object-cover"
-                    sizes="96px"
+                    width={96}
+                    height={96}
+                    quality={90}
+                    className="object-cover w-full h-full"
                   />
                 )}
               </div>

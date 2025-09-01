@@ -8,6 +8,8 @@ export interface User {
   email?: string;
   phone_number?: string;
   address?: string;
+  region?: string;
+  city?: string;
   marketing_emails?: boolean;
   created_at: string;
 }
