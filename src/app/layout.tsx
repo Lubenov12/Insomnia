@@ -5,6 +5,7 @@ import Navbar from "./Navbar";
 import PageTransition from "./components/PageTransition";
 import ConditionalPromotionalBanner from "@/components/ConditionalPromotionalBanner";
 import { ProductProvider } from "@/contexts/ProductContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 // Optimize font loading with display swap and preload
 const inter = Inter({
@@ -96,14 +97,14 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased bg-black text-white">
-        {/* Removed global loader - keeping only PageTransition */}
-
-        <PageTransition />
-        <ConditionalPromotionalBanner />
-        <Navbar />
-        <ProductProvider>
-          <main>{children}</main>
-        </ProductProvider>
+        <ThemeProvider>
+          <PageTransition />
+          <ConditionalPromotionalBanner />
+          <Navbar />
+          <ProductProvider>
+            <main>{children}</main>
+          </ProductProvider>
+        </ThemeProvider>
 
         {/* Global loader removed - no script needed */}
       </body>

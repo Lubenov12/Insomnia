@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const oswald = Oswald({
   subsets: ["latin"],
@@ -14,17 +15,35 @@ const oswald = Oswald({
 });
 
 // Memoized SVG components for better performance
-const LogoIcon = memo(() => (
+const LogoIcon = memo(({ lightTheme }) => (
   <div className="flex items-center">
-    <Image
-      src="/img/file.svg"
-      alt="Insomnia Logo"
-      width={48}
-      height={48}
-      className="h-12 w-12 mr-3 transition-transform duration-300 hover:scale-105 object-contain"
-      priority
-    />
-    <span className="text-2xl font-bold tracking-widest text-white">
+    <div className="relative h-12 w-12 mr-3">
+      <Image
+        src="/img/good.png"
+        alt="Insomnia Logo"
+        width={48}
+        height={48}
+        className={`h-12 w-12 transition-opacity duration-700 hover:scale-105 object-contain ${
+          lightTheme ? "opacity-0" : "opacity-100"
+        }`}
+        priority
+      />
+      <Image
+        src="/img/White_version.png"
+        alt="Insomnia Logo"
+        width={48}
+        height={48}
+        className={`absolute inset-0 h-12 w-12 transition-opacity duration-700 hover:scale-105 object-contain ${
+          lightTheme ? "opacity-100" : "opacity-0"
+        }`}
+        priority
+      />
+    </div>
+    <span
+      className={`text-2xl font-bold tracking-widest transition-colors duration-700 ${
+        lightTheme ? "text-gray-900" : "text-white"
+      }`}
+    >
       ИNSOMNИA
     </span>
   </div>
@@ -34,9 +53,9 @@ LogoIcon.displayName = "LogoIcon";
 
 // Night mode icon removed
 
-const EyeIcon = memo(() => (
+const EyeIcon = memo(({ lightTheme }) => (
   <svg
-    className="text-white w-6 h-6"
+    className={`${lightTheme ? "text-gray-900" : "text-white"} w-6 h-6`}
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -71,9 +90,9 @@ const EyeIcon = memo(() => (
 
 EyeIcon.displayName = "EyeIcon";
 
-const CartIcon = memo(() => (
+const CartIcon = memo(({ lightTheme }) => (
   <svg
-    className="text-white w-6 h-6 group"
+    className={`${lightTheme ? "text-gray-900" : "text-white"} w-6 h-6 group`}
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -99,9 +118,9 @@ const CartIcon = memo(() => (
 
 CartIcon.displayName = "CartIcon";
 
-const HamburgerIcon = memo(({ isOpen }) => (
+const HamburgerIcon = memo(({ isOpen, lightTheme }) => (
   <svg
-    className="block h-6 w-6"
+    className={`block h-6 w-6 ${lightTheme ? "text-gray-900" : "text-white"}`}
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -128,9 +147,9 @@ const HamburgerIcon = memo(({ isOpen }) => (
 
 HamburgerIcon.displayName = "HamburgerIcon";
 
-const UserIcon = memo(() => (
+const UserIcon = memo(({ lightTheme }) => (
   <svg
-    className="text-white w-6 h-6"
+    className={`${lightTheme ? "text-gray-900" : "text-white"} w-6 h-6`}
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -155,9 +174,9 @@ const UserIcon = memo(() => (
 
 UserIcon.displayName = "UserIcon";
 
-const LogoutIcon = memo(() => (
+const LogoutIcon = memo(({ lightTheme }) => (
   <svg
-    className="text-white w-6 h-6"
+    className={`${lightTheme ? "text-gray-900" : "text-white"} w-6 h-6`}
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -213,7 +232,7 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
   const [mounted, setMounted] = useState(false);
-  const [lightTheme, setLightTheme] = useState(false);
+  const { lightTheme, setLightTheme } = useTheme();
   const router = useRouter();
 
   // Prevent hydration mismatch by only rendering after mount
@@ -619,7 +638,7 @@ export default function Navbar() {
               className="flex-shrink-0 flex items-center"
               style={{ textDecoration: "none" }}
             >
-              <LogoIcon />
+              <LogoIcon lightTheme={lightTheme} />
             </Link>
 
             {/* Center: Nav Links */}
@@ -644,7 +663,7 @@ export default function Navbar() {
                 className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
                 aria-label="Open main menu"
               >
-                <HamburgerIcon isOpen={mobileOpen} />
+                <HamburgerIcon isOpen={mobileOpen} lightTheme={lightTheme} />
               </button>
             </div>
           </div>
@@ -655,7 +674,9 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 w-full z-40 bg-black text-white ${oswald.variable} font-oswald transition-all duration-700`}
+      className={`fixed top-0 left-0 w-full z-40 ${
+        lightTheme ? "bg-white text-gray-900 shadow-lg" : "bg-black text-white"
+      } ${oswald.variable} font-oswald transition-all duration-700`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -665,7 +686,7 @@ export default function Navbar() {
             className="flex-shrink-0 flex items-center"
             style={{ textDecoration: "none" }}
           >
-            <LogoIcon />
+            <LogoIcon lightTheme={lightTheme} />
           </Link>
 
           {/* Center: Nav Links */}
@@ -685,7 +706,7 @@ export default function Navbar() {
               className="px-3 py-2 rounded-lg border border-gray-700 text-sm hover:bg-gray-800"
               onClick={() => setLightTheme((v) => !v)}
             >
-              {lightTheme ? "Dark Theme" : "Light/Red Theme"}
+              {lightTheme ? "Dark Theme" : "Light Theme"}
             </button>
             {loading ? (
               <div className="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
@@ -693,7 +714,7 @@ export default function Navbar() {
               // Logged in state
               <>
                 <div className="flex items-center space-x-2 mr-4">
-                  <UserIcon />
+                  <UserIcon lightTheme={lightTheme} />
                   <span className="text-sm font-medium">
                     Здравей, {user.first_name || "User"} {user.last_name || ""}!
                   </span>
@@ -704,9 +725,15 @@ export default function Navbar() {
                   aria-label="Количка"
                   onClick={handleCartClick}
                 >
-                  <CartIcon />
+                  <CartIcon lightTheme={lightTheme} />
                   <CartBadge count={cartCount} />
-                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  <span
+                    className={`absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap ${
+                      lightTheme
+                        ? "bg-gray-900 text-white shadow-lg"
+                        : "bg-gray-800 text-white"
+                    }`}
+                  >
                     Количка {cartCount > 0 && `(${cartCount})`}
                   </span>
                 </button>
@@ -715,8 +742,14 @@ export default function Navbar() {
                   aria-label="Излизане от акаунта"
                   onClick={handleLogout}
                 >
-                  <LogoutIcon />
-                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  <LogoutIcon lightTheme={lightTheme} />
+                  <span
+                    className={`absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap ${
+                      lightTheme
+                        ? "bg-gray-900 text-white shadow-lg"
+                        : "bg-gray-800 text-white"
+                    }`}
+                  >
                     Излизане от акаунта
                   </span>
                 </button>
@@ -729,8 +762,14 @@ export default function Navbar() {
                   aria-label="Влизане"
                   onClick={handleProfileClick}
                 >
-                  <EyeIcon />
-                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  <EyeIcon lightTheme={lightTheme} />
+                  <span
+                    className={`absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap ${
+                      lightTheme
+                        ? "bg-gray-900 text-white shadow-lg"
+                        : "bg-gray-800 text-white"
+                    }`}
+                  >
                     Влизане
                   </span>
                 </button>
@@ -739,9 +778,15 @@ export default function Navbar() {
                   aria-label="Количка"
                   onClick={handleCartClick}
                 >
-                  <CartIcon />
+                  <CartIcon lightTheme={lightTheme} />
                   <CartBadge count={cartCount} />
-                  <span className="absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs bg-gray-800 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                  <span
+                    className={`absolute left-0 -translate-y-full bottom-0 mb-2 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap ${
+                      lightTheme
+                        ? "bg-gray-900 text-white shadow-lg"
+                        : "bg-gray-800 text-white"
+                    }`}
+                  >
                     Количка {cartCount > 0 && `(${cartCount})`}
                   </span>
                 </button>
@@ -756,7 +801,7 @@ export default function Navbar() {
               className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
               aria-label="Open main menu"
             >
-              <HamburgerIcon isOpen={mobileOpen} />
+              <HamburgerIcon isOpen={mobileOpen} lightTheme={lightTheme} />
             </button>
           </div>
         </div>
@@ -778,7 +823,7 @@ export default function Navbar() {
             // Logged in mobile menu
             <div className="w-full flex flex-col items-center space-y-4">
               <div className="flex items-center justify-center w-full p-2 mb-2">
-                <UserIcon />
+                <UserIcon lightTheme={lightTheme} />
                 <span className="text-base text-white ml-3">
                   Здравей, {user.first_name || "User"} {user.last_name || ""}!
                 </span>
@@ -790,7 +835,7 @@ export default function Navbar() {
                 onClick={handleCartClick}
               >
                 <div className="relative">
-                  <CartIcon />
+                  <CartIcon lightTheme={lightTheme} />
                   <CartBadge count={cartCount} />
                 </div>
                 <span className="text-base text-white ml-3">
@@ -802,7 +847,7 @@ export default function Navbar() {
                 aria-label="Излизане от акаунта"
                 onClick={handleLogout}
               >
-                <LogoutIcon />
+                <LogoutIcon lightTheme={lightTheme} />
                 <span className="text-base text-white ml-3">
                   Излизане от акаунта
                 </span>
@@ -816,7 +861,7 @@ export default function Navbar() {
                 aria-label="Влизане"
                 onClick={handleProfileClick}
               >
-                <EyeIcon />
+                <EyeIcon lightTheme={lightTheme} />
                 <span className="text-base text-white ml-3">Влизане</span>
               </button>
               <button
@@ -825,7 +870,7 @@ export default function Navbar() {
                 onClick={handleCartClick}
               >
                 <div className="relative">
-                  <CartIcon />
+                  <CartIcon lightTheme={lightTheme} />
                   <CartBadge count={cartCount} />
                 </div>
                 <span className="text-base text-white ml-3">

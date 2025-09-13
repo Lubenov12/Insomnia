@@ -40,11 +40,9 @@ export default function AuthGuard({
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        setUser(session.user);
-        setLoading(false);
+        router.replace(redirectTo);
       } else if (event === "SIGNED_OUT") {
-        setUser(null);
-        setLoading(false);
+        // User signed out, stay on current page
       }
     });
 

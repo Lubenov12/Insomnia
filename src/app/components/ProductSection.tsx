@@ -76,6 +76,7 @@ const ProductCard = React.memo(
     isHovered,
     onMouseEnter,
     onMouseLeave,
+    lightTheme,
   }: {
     product: {
       id: string;
@@ -87,9 +88,12 @@ const ProductCard = React.memo(
     isHovered: boolean;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
+    lightTheme: boolean;
   }) => (
     <div
-      className="group relative bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors duration-300 cursor-pointer border border-gray-700 hover:border-purple-500"
+      className={`group relative bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors duration-300 cursor-pointer border border-gray-700 ${
+        lightTheme ? "hover:border-red-500" : "hover:border-purple-500"
+      }`}
       style={{
         width: "100%",
         aspectRatio: "1/1",
@@ -125,16 +129,30 @@ const ProductCard = React.memo(
         className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{ pointerEvents: "auto" }}
       >
-        <span className="px-6 py-3 border border-purple-400 text-white text-lg font-semibold rounded-full bg-black/70 transition-colors hover:bg-purple-900/70 cursor-pointer">
+        <span
+          className={`px-6 py-3 border text-white text-lg font-semibold rounded-full bg-black/70 transition-colors cursor-pointer ${
+            lightTheme
+              ? "border-red-400 hover:bg-red-900/70"
+              : "border-purple-400 hover:bg-purple-900/70"
+          }`}
+        >
           Виж продукта
         </span>
       </Link>
 
       <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/70 to-transparent py-4 px-4">
-        <h2 className="text-xl font-semibold text-white text-center">
+        <h2
+          className={`text-xl font-semibold text-center font-bold ${
+            lightTheme ? "!text-white" : "text-gray-100"
+          }`}
+        >
           {product.name}
         </h2>
-        <p className="text-lg font-bold text-purple-400 text-center mt-1">
+        <p
+          className={`text-lg font-bold text-center mt-1 ${
+            lightTheme ? "text-red-400" : "text-purple-400"
+          }`}
+        >
           {product.price} лв.
         </p>
       </div>
@@ -148,7 +166,7 @@ ProductCard.displayName = "ProductCard";
 const LoadingGrid = () => <ProductGridSkeleton />;
 
 // Main Products Component
-const ProductsGrid = () => {
+const ProductsGrid = ({ lightTheme }: { lightTheme: boolean }) => {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const { products, loading, error, hasMore, loadMore } = useProductData();
@@ -190,7 +208,7 @@ const ProductsGrid = () => {
             // Clear error and retry
             window.location.reload();
           }}
-          className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+          className="px-6 py-3 bg-transparent border border-white text-white rounded-lg hover:bg-white hover:text-black transition-all duration-300 font-semibold"
         >
           Опитай отново
         </button>
@@ -213,6 +231,7 @@ const ProductsGrid = () => {
               isHovered={hovered === product.id}
               onMouseEnter={() => handleMouseEnter(product.id)}
               onMouseLeave={handleMouseLeave}
+              lightTheme={lightTheme}
             />
           ))
         )}
@@ -224,7 +243,7 @@ const ProductsGrid = () => {
           <button
             onClick={handleLoadMore}
             disabled={loading}
-            className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/25"
+            className="px-8 py-3 bg-transparent border border-white text-white rounded-lg hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
           >
             {loading ? "Зареждане..." : "Зареди още"}
           </button>
@@ -234,7 +253,11 @@ const ProductsGrid = () => {
   );
 };
 
-export default function ProductSection() {
+export default function ProductSection({
+  lightTheme = false,
+}: {
+  lightTheme?: boolean;
+}) {
   return (
     <section className="bg-black py-16 px-4 mt-12">
       <div className="max-w-7xl mx-auto">
@@ -249,14 +272,14 @@ export default function ProductSection() {
         </div>
 
         <Suspense fallback={<ProductGridSkeleton />}>
-          <ProductsGrid />
+          <ProductsGrid lightTheme={lightTheme} />
         </Suspense>
 
         {/* View All Products Link */}
         <div className="text-center mt-12">
           <Link
             href="/clothes"
-            className="inline-flex items-center px-6 py-3 bg-transparent border border-purple-500 text-purple-400 rounded-lg hover:bg-purple-500 hover:text-white transition-all duration-300 shadow-lg shadow-purple-500/25"
+            className="inline-flex items-center px-6 py-3 bg-transparent border border-white text-white rounded-lg hover:bg-white hover:text-black transition-all duration-300 shadow-lg"
           >
             Виж всички продукти
             <svg

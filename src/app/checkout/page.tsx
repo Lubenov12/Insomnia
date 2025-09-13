@@ -706,10 +706,10 @@ function CheckoutForm() {
         // Trigger cart update event for navbar
         window.dispatchEvent(new CustomEvent("cartUpdated"));
 
-        // Redirect to clothes page after 3 seconds to see updated inventory
+        // Redirect to clothes page after 30 seconds to see updated inventory
         setTimeout(() => {
           window.location.href = "/clothes";
-        }, 3000);
+        }, 30000);
       }
     } catch (e) {
       // Enhanced error handling with Bulgarian messages
@@ -739,7 +739,7 @@ function CheckoutForm() {
             <br />
             Количествата на продуктите са автоматично актуализирани.
             <br />
-            След 3 секунди ще бъдете пренасочени към продуктите.
+            След 30 секунди ще бъдете пренасочени към продуктите.
           </div>
           <Link
             href="/clothes"

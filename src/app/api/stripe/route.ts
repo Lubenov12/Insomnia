@@ -5,7 +5,7 @@ import {
   formatAmountForStripe,
   validateStripeConfig,
 } from "@/lib/stripe";
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin, supabase } from "@/lib/supabase";
 
 const paymentRequestSchema = z.object({
   amount: z.number().min(1),
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
+        { error: "Invalid request data", details: error.issues },
         { status: 400 }
       );
     }

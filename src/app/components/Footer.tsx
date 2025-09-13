@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Footer() {
+  const { lightTheme } = useTheme();
   return (
     <footer className="bg-black border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -9,15 +11,29 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <Image
-                src="/img/file.svg"
-                alt="Insomnia Logo"
-                width={40}
-                height={40}
-                className="h-10 w-10 mr-3 object-contain"
-                priority
-              />
-              <h3 className="text-2xl font-bold text-white">INSOMNIA</h3>
+              <div className="relative h-10 w-10 mr-3">
+                <Image
+                  src="/img/good.png"
+                  alt="Insomnia Logo"
+                  width={40}
+                  height={40}
+                  className={`h-10 w-10 transition-opacity duration-700 object-contain ${
+                    lightTheme ? 'opacity-0' : 'opacity-100'
+                  }`}
+                  priority
+                />
+                <Image
+                  src="/img/White_version.png"
+                  alt="Insomnia Logo"
+                  width={40}
+                  height={40}
+                  className={`absolute inset-0 h-10 w-10 transition-opacity duration-700 object-contain ${
+                    lightTheme ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  priority
+                />
+              </div>
+              <h3 className="text-2xl font-bold text-white">ИNSOMNИA</h3>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
               Открийте стила си с нашата колекция от уникални дрехи. Създадени

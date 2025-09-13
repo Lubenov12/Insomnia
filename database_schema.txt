@@ -1,0 +1,108 @@
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│     users       │    │    products      │    │ product_variants│
+├─────────────────┤    ├──────────────────┤    ├─────────────────┤
+│ id (PK)         │◄───┤ id (PK)          │◄───┤ id (PK)         │
+│ name            │    │ name             │    │ product_id (FK) │
+│ email           │    │ description      │    │ size            │
+│ address         │    │ price            │    │ stock_quantity  │
+│ phone_number    │    │ image_url        │    │ created_at      │
+│ created_at      │    │ category         │    └─────────────────┘
+└─────────────────┘    │ stock_quantity  │
+         │              │ created_at      │
+         │              └──────────────────┘
+         │                       │
+         │              ┌──────────────────┐
+         │              │   categories     │
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ name             │
+         │              │ description      │
+         │              │ parent_id (FK)   │
+         │              └──────────────────┘
+         │
+         │              ┌──────────────────┐
+         │              │   orders         │
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ user_id (FK)     │
+         │              │ status           │
+         │              │ total_amount     │
+         │              │ payment_method   │
+         │              │ created_at       │
+         │              └──────────────────┘
+         │                       │
+         │              ┌──────────────────┐
+         │              │  order_items     │
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ order_id (FK)    │
+         │              │ product_id (FK)  │
+         │              │ quantity         │
+         │              │ unit_price       │
+         │              └──────────────────┘
+         │
+         │              ┌──────────────────┐
+         │              │   cart_items     │
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ user_id (FK)     │
+         │              │ product_id (FK)  │
+         │              │ quantity         │
+         │              │ created_at       │
+         │              └──────────────────┘
+         │
+         │              ┌──────────────────┐
+         │              │    favorites     │
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ user_id (FK)     │
+         │              │ product_id (FK)  │
+         │              │ created_at       │
+         │              └──────────────────┘
+         │
+         │              ┌──────────────────┐
+         │              │   promo_codes    │
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ code             │
+         │              │ discount_percent │
+         │              │ valid_from       │
+         │              │ valid_until      │
+         │              │ max_uses         │
+         │              │ current_uses     │
+         │              └──────────────────┘
+         │
+         │              ┌──────────────────┐
+         │              │ shipping_addresses│
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ user_id (FK)     │
+         │              │ address_line1    │
+         │              │ city             │
+         │              │ postal_code      │
+         │              │ country          │
+         │              └──────────────────┘
+         │
+         │              ┌──────────────────┐
+         │              │ product_reviews  │
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ product_id (FK)  │
+         │              │ user_id (FK)     │
+         │              │ rating           │
+         │              │ comment          │
+         │              └──────────────────┘
+         │
+         │              ┌──────────────────┐
+         │              │   admin_users    │
+         │              ├──────────────────┤
+         │              │ id (PK)          │
+         │              │ username         │
+         │              │ role             │
+         │              │ created_at       │
+         │              └──────────────────┘
+         │
+         └──────────────┴──────────────────┴──────────────────┘
+
+
+         Регистрация → Влизане → Разглеждане на продукти → Добавяне в количка → Поръчване → Плащане → Доставка

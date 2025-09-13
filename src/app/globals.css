@@ -305,38 +305,62 @@ video {
   contain: layout style paint;
 }
 
-/* Black background for dark theme */
+/* Default dark theme background */
 html,
 body {
   background-color: #000000;
 }
 
-/* Lightweight white/red theme trial overrides */
-:root {
-  --trial-bg: #fff;
-  --trial-surface: #fff;
-  --trial-surface-2: #f7f7f7;
-  --trial-fg: #0a0a0a;
-  --trial-muted: #6b7280;
-  --trial-border: #e5e7eb;
-  --trial-brand: #ff0600;
-  --trial-brand-dark: #cc0500;
+/* Light theme body styles */
+[data-theme="light-red"] html,
+[data-theme="light-red"] body {
+  background-color: var(--trial-bg) !important;
+  color: var(--trial-fg) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Map commonly used Tailwind classes to trial theme colors (scoped to opt-in attribute) */
+/* Improved white/red theme with better contrast and elegance */
+:root {
+  --trial-bg: #fefefe;
+  --trial-surface: #ffffff;
+  --trial-surface-2: #f8f9fa;
+  --trial-surface-3: #f1f3f4;
+  --trial-fg: #2d3748;
+  --trial-fg-secondary: #4a5568;
+  --trial-muted: #718096;
+  --trial-muted-light: #a0aec0;
+  --trial-border: #e2e8f0;
+  --trial-border-light: #f7fafc;
+  --trial-brand: #e53e3e;
+  --trial-brand-dark: #c53030;
+  --trial-brand-light: #fc8181;
+  --trial-brand-subtle: #fed7d7;
+  --trial-success: #38a169;
+  --trial-success-light: #c6f6d5;
+}
+
+/* Map commonly used Tailwind classes to improved theme colors (scoped to opt-in attribute) */
 [data-theme="light-red"] .bg-black:not(.hero-section *) {
   background-color: var(--trial-bg) !important;
 }
 [data-theme="light-red"] .bg-gray-900:not(.hero-section *) {
   background-color: var(--trial-surface) !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 [data-theme="light-red"] .bg-gray-800:not(.hero-section *) {
   background-color: var(--trial-surface-2) !important;
+  border: 1px solid var(--trial-border-light);
+}
+[data-theme="light-red"] .bg-gray-700:not(.hero-section *) {
+  background-color: var(--trial-surface-3) !important;
 }
 [data-theme="light-red"] .border-gray-700:not(.hero-section *) {
   border-color: var(--trial-border) !important;
 }
 [data-theme="light-red"] .border-gray-800:not(.hero-section *) {
+  border-color: var(--trial-border) !important;
+}
+[data-theme="light-red"] .border-gray-600:not(.hero-section *) {
   border-color: var(--trial-border) !important;
 }
 [data-theme="light-red"] .text-white:not(.hero-section *) {
@@ -346,56 +370,72 @@ body {
   color: var(--trial-fg) !important;
 }
 [data-theme="light-red"] .text-gray-200:not(.hero-section *) {
-  color: var(--trial-fg) !important;
+  color: var(--trial-fg-secondary) !important;
 }
 [data-theme="light-red"] .text-gray-300:not(.hero-section *) {
-  color: #374151 !important;
+  color: var(--trial-muted) !important;
 }
 [data-theme="light-red"] .text-gray-400:not(.hero-section *) {
-  color: var(--trial-muted) !important;
+  color: var(--trial-muted-light) !important;
 }
 [data-theme="light-red"] .text-gray-500:not(.hero-section *) {
-  color: var(--trial-muted) !important;
+  color: var(--trial-muted-light) !important;
 }
 [data-theme="light-red"] .text-purple-400:not(.hero-section *) {
   color: var(--trial-brand) !important;
 }
+[data-theme="light-red"] .text-purple-500:not(.hero-section *) {
+  color: var(--trial-brand) !important;
+}
 [data-theme="light-red"] .bg-purple-600:not(.hero-section *) {
   background-color: var(--trial-brand) !important;
+  box-shadow: 0 4px 6px -1px rgba(229, 62, 62, 0.1),
+    0 2px 4px -1px rgba(229, 62, 62, 0.06);
 }
 [data-theme="light-red"] .hover\:bg-purple-700:hover:not(.hero-section *) {
   background-color: var(--trial-brand-dark) !important;
+  box-shadow: 0 6px 12px -2px rgba(197, 48, 48, 0.15),
+    0 4px 6px -1px rgba(197, 48, 48, 0.1);
 }
 [data-theme="light-red"] .hover\:bg-gray-800:hover:not(.hero-section *) {
+  background-color: var(--trial-surface-3) !important;
+}
+[data-theme="light-red"] .hover\:bg-gray-700:hover:not(.hero-section *) {
   background-color: var(--trial-surface-2) !important;
 }
-/* Additional color mappings for text readability */
+/* Additional color mappings for better readability and consistency */
 [data-theme="light-red"] .bg-red-900:not(.hero-section *) {
-  background-color: #fee2e2 !important;
+  background-color: var(--trial-brand-subtle) !important;
 }
 [data-theme="light-red"] .text-red-400:not(.hero-section *) {
   color: var(--trial-brand) !important;
 }
 [data-theme="light-red"] .text-green-400:not(.hero-section *) {
-  color: #16a34a !important;
+  color: var(--trial-success) !important;
 }
 [data-theme="light-red"] .text-green-300:not(.hero-section *) {
-  color: #22c55e !important;
+  color: var(--trial-success) !important;
 }
 [data-theme="light-red"] .bg-green-900:not(.hero-section *) {
-  background-color: #f0fdf4 !important;
+  background-color: var(--trial-success-light) !important;
 }
 [data-theme="light-red"] .border-green-500:not(.hero-section *) {
-  border-color: #22c55e !important;
+  border-color: var(--trial-success) !important;
 }
 [data-theme="light-red"] .border-red-500:not(.hero-section *) {
   border-color: var(--trial-brand) !important;
 }
+[data-theme="light-red"] .border-purple-500:not(.hero-section *) {
+  border-color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .border-purple-400:not(.hero-section *) {
+  border-color: var(--trial-brand-light) !important;
+}
 
-/* Gradients swapped to red */
+/* Improved gradients with better color transitions */
 [data-theme="light-red"] .from-purple-600 {
   --tw-gradient-from: var(--trial-brand) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(255 6 0 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-to: rgba(229, 62, 62, 0) var(--tw-gradient-to-position) !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 [data-theme="light-red"] .to-indigo-700 {
@@ -403,14 +443,514 @@ body {
 }
 [data-theme="light-red"] .hover\:from-purple-700:hover {
   --tw-gradient-from: var(--trial-brand-dark) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(204 5 0 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-to: rgba(197, 48, 48, 0) var(--tw-gradient-to-position) !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 [data-theme="light-red"] .hover\:to-indigo-800:hover {
   --tw-gradient-to: var(--trial-brand-dark) var(--tw-gradient-to-position) !important;
 }
 
-/* Focus ring */
-.focus\:ring-purple-500:focus {
+/* Additional purple color mappings */
+[data-theme="light-red"] .from-purple-500 {
+  --tw-gradient-from: var(--trial-brand-light) var(--tw-gradient-from-position) !important;
+}
+[data-theme="light-red"] .to-pink-500 {
+  --tw-gradient-to: var(--trial-brand-light) var(--tw-gradient-to-position) !important;
+}
+
+/* Ensure Hero section never changes with light theme */
+[data-theme="light-red"] .hero-section,
+[data-theme="light-red"] .hero-section.bg-black,
+[data-theme="light-red"] .hero-section .bg-black {
+  background-color: #000000 !important;
+}
+[data-theme="light-red"] .hero-section .text-white {
+  color: #ffffff !important;
+}
+[data-theme="light-red"] .hero-section .text-gray-100 {
+  color: #f3f4f6 !important;
+}
+[data-theme="light-red"] .hero-section .text-gray-200 {
+  color: #e5e7eb !important;
+}
+[data-theme="light-red"] .hero-section .text-gray-300 {
+  color: #d1d5db !important;
+}
+[data-theme="light-red"] .hero-section .text-gray-400 {
+  color: #9ca3af !important;
+}
+[data-theme="light-red"] .hero-section .border-gray-700,
+[data-theme="light-red"] .hero-section .border-gray-800 {
+  border-color: rgba(55, 65, 81, 1) !important; /* keep dark borders */
+}
+
+/* Focus rings and interactive states */
+[data-theme="light-red"] .focus\:ring-purple-500:focus {
   --tw-ring-color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .ring-purple-500 {
+  --tw-ring-color: var(--trial-brand) !important;
+}
+
+/* Improved interactive states for light theme */
+[data-theme="light-red"] .hover\:text-gray-300:hover:not(.hero-section *) {
+  color: var(--trial-muted) !important;
+}
+[data-theme="light-red"] .hover\:border-purple-500:hover:not(.hero-section *) {
+  border-color: var(--trial-brand) !important;
+}
+
+/* Input and form styles */
+[data-theme="light-red"] input:not(.hero-section input),
+[data-theme="light-red"] textarea:not(.hero-section textarea),
+[data-theme="light-red"] select:not(.hero-section select) {
+  background-color: var(--trial-surface) !important;
+  border-color: var(--trial-border) !important;
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] input:focus:not(.hero-section input),
+[data-theme="light-red"] textarea:focus:not(.hero-section textarea),
+[data-theme="light-red"] select:focus:not(.hero-section select) {
+  border-color: var(--trial-brand) !important;
+  box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.1) !important;
+}
+
+/* Loading states */
+[data-theme="light-red"] .border-t-transparent {
+  border-top-color: transparent !important;
+}
+[data-theme="light-red"] .border-purple-500 {
+  border-color: var(--trial-brand) !important;
+}
+
+/* Badge and notification styles */
+[data-theme="light-red"] .bg-gradient-to-br.from-purple-600 {
+  background: linear-gradient(
+    to bottom right,
+    var(--trial-brand),
+    var(--trial-brand-dark)
+  ) !important;
+}
+
+/* Tooltip improvements */
+[data-theme="light-red"]
+  .bg-gray-800:not(.hero-section *):not(input):not(textarea):not(select) {
+  background-color: var(--trial-fg) !important;
+  color: var(--trial-surface) !important;
+}
+
+/* Product page specific improvements */
+/* Low stock warning styling for light theme - using attribute selectors for opacity classes */
+[data-theme="light-red"] [class*="bg-red-900/"]:not(.hero-section *) {
+  background-color: var(--trial-brand-subtle) !important;
+}
+[data-theme="light-red"] [class*="border-red-500/"]:not(.hero-section *) {
+  border-color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .text-red-200:not(.hero-section *) {
+  color: var(--trial-brand-dark) !important;
+  font-weight: 500;
+}
+
+/* Size button hover states for light theme */
+[data-theme="light-red"] .text-red-300:not(.hero-section *) {
+  color: var(--trial-brand) !important;
+  font-weight: 500;
+}
+[data-theme="light-red"]
+  [class*="hover:bg-red-900/"]:hover:not(.hero-section *) {
+  background-color: var(--trial-brand-subtle) !important;
+}
+[data-theme="light-red"] .hover\:border-red-400:hover:not(.hero-section *) {
+  border-color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .border-red-500:not(.hero-section *) {
+  border-color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .bg-red-600:not(.hero-section *) {
+  background-color: var(--trial-brand) !important;
+}
+[data-theme="light-red"] .hover\:bg-red-700:hover:not(.hero-section *) {
+  background-color: var(--trial-brand-dark) !important;
+}
+
+/* Fix size button hover states in light theme */
+[data-theme="light-red"] .hover\:bg-gray-700:hover:not(.hero-section *) {
+  background-color: var(--trial-border) !important;
+  color: var(--trial-fg) !important;
+}
+
+/* Ensure size button text is always visible */
+[data-theme="light-red"] button:hover span:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] button span:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+
+/* Fix quantity input styling in light theme */
+[data-theme="light-red"] input.bg-transparent:not(.hero-section input) {
+  background-color: transparent !important;
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] input.text-white:not(.hero-section input) {
+  color: var(--trial-fg) !important;
+}
+
+/* Fix quantity container background */
+[data-theme="light-red"] .bg-gray-800.border-gray-600:not(.hero-section *) {
+  background-color: var(--trial-surface-2) !important;
+  border-color: var(--trial-border) !important;
+}
+
+/* Additional fixes for button hover states */
+[data-theme="light-red"]
+  .hover\:bg-gray-700.rounded-none:hover:not(.hero-section *) {
+  background-color: var(--trial-surface-3) !important;
+}
+
+/* Ensure text remains visible in quantity buttons */
+[data-theme="light-red"] button .text-white:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+
+/* Force all button text to be visible in light theme */
+[data-theme="light-red"] button:not(.hero-section button) {
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] button:not(.hero-section button) * {
+  color: inherit !important;
+}
+
+/* Exception for promo code remove button - no background */
+[data-theme="light-red"] button.hover\:text-red-400:not(.hero-section button) {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Specific fixes for size buttons */
+[data-theme="light-red"] .text-base:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] .text-xs:not(.hero-section *) {
+  color: var(--trial-muted) !important;
+}
+[data-theme="light-red"] .opacity-75:not(.hero-section *) {
+  opacity: 0.8 !important;
+  color: var(--trial-muted) !important;
+}
+
+/* Ultra specific selectors for size button text visibility */
+[data-theme="light-red"]
+  button[class*="min-w-"]
+  span.text-base:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+  font-weight: 600;
+}
+[data-theme="light-red"]
+  button[class*="min-w-"]
+  span.text-xs:not(.hero-section *) {
+  color: var(--trial-fg-secondary) !important;
+  font-weight: 500;
+}
+
+/* Override any inherited text colors on buttons */
+[data-theme="light-red"]
+  button:not([class*="bg-red"]):not(.hero-section button) {
+  border-color: var(--trial-border) !important;
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"]
+  button:not([class*="bg-red"]):hover:not(.hero-section button) {
+  border-color: var(--trial-muted-light) !important;
+}
+
+/* Fix specific input field styling */
+[data-theme="light-red"] input[type="number"]:not(.hero-section input) {
+  background-color: transparent !important;
+  color: var(--trial-fg) !important;
+  font-weight: 600;
+}
+
+/* Remove background colors from navbar icon buttons to prevent squares during transitions */
+[data-theme="light-red"] nav button.p-2:not(.hero-section button) {
+  background-color: transparent !important;
+  border: none !important;
+  transition: none !important;
+}
+[data-theme="light-red"] nav button.p-2:hover:not(.hero-section button) {
+  background-color: transparent !important;
+}
+[data-theme="light-red"] nav .relative.group:not(.hero-section *) {
+  background-color: transparent !important;
+}
+
+/* Also fix tooltip backgrounds */
+[data-theme="light-red"] nav .bg-gray-800:not(.hero-section *) {
+  background-color: var(--trial-fg) !important;
+  color: var(--trial-surface) !important;
+}
+
+/* Specifically target navbar icon containers */
+[data-theme="light-red"] nav button[aria-label]:not(.hero-section button) {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+[data-theme="light-red"]
+  nav
+  button[aria-label]:hover:not(.hero-section button) {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Remove any potential button styling */
+[data-theme="light-red"] nav .cursor-pointer:not(.hero-section *) {
+  background-color: transparent !important;
+}
+
+/* Theme toggle button specific styling */
+[data-theme="light-red"] nav button.border-gray-700:not(.hero-section button) {
+  background-color: var(--trial-surface-2) !important;
+  border-color: var(--trial-border) !important;
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"]
+  nav
+  button.border-gray-700:hover:not(.hero-section button) {
+  background-color: var(--trial-surface-3) !important;
+}
+
+/* Selected size button styling - make it red when selected */
+[data-theme="light-red"]
+  button[class*="bg-purple-600"]:not(.hero-section button) {
+  background-color: var(--trial-brand) !important;
+  border-color: var(--trial-brand) !important;
+  color: white !important;
+}
+[data-theme="light-red"]
+  button[class*="bg-purple-600"]:hover:not(.hero-section button) {
+  background-color: var(--trial-brand-dark) !important;
+  border-color: var(--trial-brand-dark) !important;
+}
+
+/* Selected size button text should be white */
+[data-theme="light-red"]
+  button[class*="bg-purple-600"]
+  span:not(.hero-section *) {
+  color: white !important;
+}
+[data-theme="light-red"]
+  button[class*="bg-purple-600"]:hover
+  span:not(.hero-section *) {
+  color: white !important;
+}
+
+/* Fix "Обратно към дрехите" button - target the actual <a> element */
+[data-theme="light-red"] a.bg-gray-800:not(.hero-section *) {
+  background-color: var(--trial-surface) !important;
+  border-color: var(--trial-border) !important;
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] a.bg-gray-800:hover:not(.hero-section *) {
+  background-color: var(--trial-surface-2) !important;
+  border-color: var(--trial-muted-light) !important;
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] a.bg-gray-800 *:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] a.bg-gray-800:hover *:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+
+/* Additional selectors for the button classes */
+[data-theme="light-red"] a.border-gray-600:not(.hero-section *) {
+  background-color: var(--trial-surface) !important;
+  border-color: var(--trial-border) !important;
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] a.text-gray-300:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+[data-theme="light-red"] a.hover\:text-white:hover:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+
+/* Force black text and icon for back button */
+[data-theme="light-red"] a[href="/clothes"]:not(.hero-section *) {
+  color: #2d3748 !important;
+}
+[data-theme="light-red"] a[href="/clothes"] svg:not(.hero-section *) {
+  color: #2d3748 !important;
+}
+[data-theme="light-red"] a[href="/clothes"]:hover:not(.hero-section *) {
+  color: #2d3748 !important;
+}
+[data-theme="light-red"] a[href="/clothes"]:hover svg:not(.hero-section *) {
+  color: #2d3748 !important;
+}
+
+/* Force black text for back button with higher specificity */
+[data-theme="light-red"] a[href="/clothes"].bg-gray-800.text-gray-300 {
+  color: black !important;
+}
+[data-theme="light-red"] a[href="/clothes"].bg-gray-800.text-gray-300:hover {
+  color: black !important;
+}
+[data-theme="light-red"] a[href="/clothes"] * {
+  color: black !important;
+}
+[data-theme="light-red"] a[href="/clothes"]:hover * {
+  color: black !important;
+}
+
+/* Fix PromotionalBanner - soft elegant theme for light mode */
+[data-theme="light-red"] .bg-gradient-to-r.from-red-900 {
+  background: linear-gradient(to right, #f8f9fa, #e9ecef, #f8f9fa) !important;
+  border-bottom: 1px solid #dee2e6;
+}
+[data-theme="light-red"] .text-red-200 {
+  color: var(--trial-brand) !important;
+  font-weight: 600;
+}
+[data-theme="light-red"] .text-red-300 {
+  color: var(--trial-brand) !important;
+  font-weight: 500;
+}
+/* Promotional banner text in light theme */
+[data-theme="light-red"] .bg-gradient-to-r .text-white {
+  color: var(--trial-fg) !important;
+}
+/* Truck icon color */
+[data-theme="light-red"] .bg-gradient-to-r .text-white svg {
+  color: var(--trial-brand) !important;
+}
+
+/* Fix cart quantity input - white background with black text */
+[data-theme="light-red"] input.text-gray-200:not(.hero-section input) {
+  background-color: white !important;
+  color: black !important;
+  font-weight: 700;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 4px !important;
+}
+[data-theme="light-red"]
+  input[type="number"].text-gray-200:not(.hero-section input) {
+  background-color: white !important;
+  color: black !important;
+  font-weight: 700;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 4px !important;
+}
+[data-theme="light-red"]
+  .bg-gray-800
+  input.text-gray-200:not(.hero-section input) {
+  background-color: white !important;
+  color: black !important;
+  font-weight: 700;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 4px !important;
+}
+[data-theme="light-red"]
+  .w-16.text-center.bg-transparent.text-gray-200:not(.hero-section *) {
+  background-color: white !important;
+  color: black !important;
+  font-weight: 700;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 4px !important;
+}
+
+/* Cart page elegant white theme styling */
+[data-theme="light-red"] .bg-gray-900:not(.hero-section *) {
+  background-color: white !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light-red"] .border-gray-700:not(.hero-section *) {
+  border-color: #f3f4f6 !important;
+}
+
+[data-theme="light-red"] .border-gray-800:not(.hero-section *) {
+  border-color: #e5e7eb !important;
+}
+
+/* Cart item containers */
+[data-theme="light-red"] .bg-gray-800:not(.hero-section *):not(input) {
+  background-color: #f8f9fa !important;
+  border-color: #e9ecef !important;
+}
+
+/* Purple accents to red */
+[data-theme="light-red"] .text-purple-400:not(.hero-section *) {
+  color: var(--trial-brand) !important;
+}
+
+[data-theme="light-red"] .bg-purple-600:not(.hero-section *) {
+  background-color: var(--trial-brand) !important;
+}
+
+[data-theme="light-red"] .hover\:bg-purple-700:hover:not(.hero-section *) {
+  background-color: var(--trial-brand-dark) !important;
+}
+
+/* Text colors for cart page */
+[data-theme="light-red"]
+  .text-white:not(.hero-section *):not(.bg-gradient-to-r *) {
+  color: var(--trial-fg) !important;
+}
+
+[data-theme="light-red"] .text-gray-100:not(.hero-section *) {
+  color: var(--trial-fg) !important;
+}
+
+[data-theme="light-red"] .text-gray-300:not(.hero-section *):not(input) {
+  color: var(--trial-muted) !important;
+}
+
+[data-theme="light-red"] .text-gray-400:not(.hero-section *) {
+  color: var(--trial-muted-light) !important;
+}
+
+/* Hover effects for buttons */
+[data-theme="light-red"]
+  .hover\:bg-gray-700:hover:not(.hero-section *):not(input) {
+  background-color: var(--trial-surface-2) !important;
+  color: var(--trial-fg) !important;
+}
+
+/* Promo code input styling */
+[data-theme="light-red"] input[placeholder*="промо"]:not(.hero-section input),
+[data-theme="light-red"]
+  input[placeholder*="Въведете"]:not(.hero-section input) {
+  background-color: white !important;
+  border-color: var(--trial-border) !important;
+  color: var(--trial-fg) !important;
+}
+
+[data-theme="light-red"]
+  input[placeholder*="промо"]:focus:not(.hero-section input),
+[data-theme="light-red"]
+  input[placeholder*="Въведете"]:focus:not(.hero-section input) {
+  border-color: var(--trial-brand) !important;
+  box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.1) !important;
+}
+
+/* Fix unwanted borders in product quantity controls */
+[data-theme="light-red"] .border-gray-600:not(.hero-section *) {
+  border-color: var(--trial-border) !important;
+}
+
+[data-theme="light-red"] .bg-gray-800.border-gray-600:not(.hero-section *) {
+  border-color: var(--trial-border-light) !important;
+}
+
+/* Remove harsh borders from quantity container */
+[data-theme="light-red"]
+  .flex.items-center.border.border-gray-600:not(.hero-section *) {
+  border-color: var(--trial-border-light) !important;
+  background-color: var(--trial-surface-2) !important;
 }

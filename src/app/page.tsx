@@ -1,7 +1,9 @@
+"use client";
 import { Suspense } from "react";
 import Hero from "./Hero";
 import ProductSection from "./components/ProductSection";
 import Footer from "./components/Footer";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Error boundary component
 const ErrorFallback = ({ error }: { error: Error }) => (
@@ -32,6 +34,8 @@ const ErrorFallback = ({ error }: { error: Error }) => (
 );
 
 export default function Home() {
+  const { lightTheme } = useTheme();
+
   return (
     <>
       <Suspense
@@ -46,7 +50,7 @@ export default function Home() {
       >
         <Hero />
       </Suspense>
-      <ProductSection />
+      <ProductSection lightTheme={lightTheme} />
       <Footer />
     </>
   );

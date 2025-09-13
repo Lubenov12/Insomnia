@@ -4,13 +4,14 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Footer from "../../components/Footer";
-import { useProducts } from "@/contexts/ProductContext";
+import { useProducts, ProductWithVariants } from "@/contexts/ProductContext";
 import CartSuccessModal from "../../components/CartSuccessModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { clientAuth } from "@/lib/auth";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   ShoppingCart,
   ArrowLeft,
@@ -30,19 +31,7 @@ type ProductVariant = {
   updated_at: string;
 };
 
-type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image_url: string;
-  stock_quantity: number;
-  category: string;
-  variants?: ProductVariant[];
-  size_availability?: {
-    [key: string]: number;
-  };
-};
+type Product = ProductWithVariants;
 
 // Enhanced Size Button Component with shadcn/ui styling
 const SizeButton = React.memo(
@@ -151,6 +140,7 @@ const ProductSkeleton = () => (
 
 export default function ProductPage() {
   const params = useParams();
+  const { lightTheme } = useTheme();
 
   // Get product slug from URL
   const slug = params.slug as string;
@@ -200,7 +190,12 @@ export default function ProductPage() {
             (p) =>
               p.id !== productData.id && p.category === productData.category
           )
-          .slice(0, 4);
+          .slice(0, 4)
+          .map((p) => ({
+            ...p,
+            size_availability: {},
+            variants: [],
+          }));
 
         setSimilarProducts(similar);
       } catch {
@@ -453,13 +448,23 @@ export default function ProductPage() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center border border-gray-600 rounded-xl bg-gray-800 overflow-hidden">
+              <div
+                className={`flex items-center rounded-xl overflow-hidden ${
+                  lightTheme
+                    ? "bg-gray-50"
+                    : "border border-gray-600 bg-gray-800"
+                }`}
+              >
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => handleQuantityChange(quantity - 1)}
                   disabled={quantity <= 1}
-                  className="w-12 h-12 rounded-none hover:bg-gray-700 disabled:opacity-50"
+                  className={`w-12 h-12 rounded-none disabled:opacity-50 ${
+                    lightTheme
+                      ? "hover:bg-gray-100 text-gray-700"
+                      : "hover:bg-gray-700 text-white"
+                  }`}
                 >
                   <Minus className="w-4 h-4" />
                 </Button>
@@ -474,7 +479,9 @@ export default function ProductPage() {
                     }
                     value={quantity}
                     onChange={(e) => handleQuantityInput(e.target.value)}
-                    className="w-16 text-center bg-transparent text-white text-lg font-semibold border-none outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className={`w-16 text-center bg-transparent text-lg font-semibold border-none outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                      lightTheme ? "text-gray-800" : "text-white"
+                    }`}
                     disabled={!selectedSize}
                   />
                 </div>
@@ -488,7 +495,11 @@ export default function ProductPage() {
                         (product.size_availability?.[selectedSize] || 0)
                       : true
                   }
-                  className="w-12 h-12 rounded-none hover:bg-gray-700 disabled:opacity-50"
+                  className={`w-12 h-12 rounded-none disabled:opacity-50 ${
+                    lightTheme
+                      ? "hover:bg-gray-100 text-gray-700"
+                      : "hover:bg-gray-700 text-white"
+                  }`}
                 >
                   <Plus className="w-4 h-4" />
                 </Button>

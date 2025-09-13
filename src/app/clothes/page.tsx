@@ -9,6 +9,7 @@ import React, {
 import Link from "next/link";
 import Image from "next/image";
 import Footer from "../components/Footer";
+import { useTheme } from "@/contexts/ThemeContext";
 
 type Product = {
   id: string;
@@ -178,21 +179,25 @@ const useProducts = (page: number, limit: number = 12) => {
   };
 };
 
-// Memoized Product Card Component with dark theme
+// Memoized Product Card Component with theme support
 const ProductCard = React.memo(
   ({
     product,
     isHovered,
     onMouseEnter,
     onMouseLeave,
+    lightTheme,
   }: {
     product: Product;
     isHovered: boolean;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
+    lightTheme: boolean;
   }) => (
     <div
-      className="group relative bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-all duration-300 cursor-pointer border border-gray-700 hover:border-purple-500"
+      className={`group relative bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-all duration-300 cursor-pointer border border-gray-700 ${
+        lightTheme ? "hover:border-red-500" : "hover:border-purple-500"
+      }`}
       style={{
         width: "100%",
         aspectRatio: "1/1",
@@ -237,16 +242,24 @@ const ProductCard = React.memo(
         className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
         style={{ pointerEvents: "auto" }}
       >
-        <span className="px-6 py-3 border border-purple-400 text-white text-lg font-semibold rounded-full bg-black/50 backdrop-blur-sm transition-all hover:bg-purple-900/50 cursor-pointer shadow-lg shadow-purple-500/25">
+        <span className={`px-6 py-3 border text-white text-lg font-semibold rounded-full bg-black/50 backdrop-blur-sm transition-all cursor-pointer shadow-lg ${
+          lightTheme
+            ? "border-red-400 hover:bg-red-900/50 shadow-red-500/25"
+            : "border-purple-400 hover:bg-purple-900/50 shadow-purple-500/25"
+        }`}>
           Виж продукта
         </span>
       </Link>
 
       <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/70 to-transparent py-4 px-4">
-        <h2 className="text-xl font-semibold text-white text-center">
+        <h2 className={`text-xl font-semibold text-center font-bold ${
+          lightTheme ? "!text-white" : "text-white"
+        }`}>
           {product.name}
         </h2>
-        <p className="text-lg font-bold text-purple-400 text-center mt-1">
+        <p className={`text-lg font-bold text-center mt-1 ${
+          lightTheme ? "text-red-400" : "text-purple-400"
+        }`}>
           {product.price} лв.
         </p>
       </div>
@@ -326,7 +339,7 @@ const InfiniteScroll = ({
 };
 
 // Main Products Component
-const ProductsGrid = () => {
+const ProductsGrid = ({ lightTheme }: { lightTheme: boolean }) => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
@@ -389,6 +402,7 @@ const ProductsGrid = () => {
               isHovered={hovered === product.id}
               onMouseEnter={() => handleMouseEnter(product.id)}
               onMouseLeave={handleMouseLeave}
+              lightTheme={lightTheme}
             />
           ))
         )}
@@ -413,6 +427,8 @@ const ProductsGrid = () => {
 };
 
 export default function ClothesPage() {
+  const { lightTheme } = useTheme();
+  
   return (
     <div className="min-h-screen bg-black">
       {/* Hero Section */}
@@ -432,7 +448,7 @@ export default function ClothesPage() {
       <section className="bg-black py-16 px-4">
         <ProductErrorBoundary>
           <Suspense fallback={<LoadingGrid />}>
-            <ProductsGrid />
+            <ProductsGrid lightTheme={lightTheme} />
           </Suspense>
         </ProductErrorBoundary>
       </section>

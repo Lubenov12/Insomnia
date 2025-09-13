@@ -2,13 +2,30 @@
 import React, { useState, useEffect } from "react";
 import { X, Truck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function PromotionalBanner() {
+  const { lightTheme } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
+    // Check if banner was dismissed recently
+    const dismissedTime = localStorage.getItem("promo_banner_dismissed");
+    if (dismissedTime) {
+      const timeDiff = Date.now() - parseInt(dismissedTime);
+      const twentyMinutes = 20 * 60 * 1000; // 20 minutes in milliseconds
+
+      if (timeDiff < twentyMinutes) {
+        // Banner was dismissed less than 20 minutes ago
+        return;
+      } else {
+        // Clear expired dismissal
+        localStorage.removeItem("promo_banner_dismissed");
+      }
+    }
+
     // Show banner after 20 seconds for better UX
     const timer = setTimeout(() => {
       setIsVisible(true);
@@ -18,7 +35,8 @@ export default function PromotionalBanner() {
 
   const handleDismiss = () => {
     setIsDismissed(true);
-    // Remove localStorage setting so banner shows again on refresh
+    // Store dismissal time in localStorage for 20 minutes
+    localStorage.setItem("promo_banner_dismissed", Date.now().toString());
   };
 
   if (isDismissed) return null;
@@ -30,17 +48,35 @@ export default function PromotionalBanner() {
       }`}
     >
       {/* Animated background gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-900">
+      <div
+        className={`relative overflow-hidden ${
+          lightTheme
+            ? "bg-gradient-to-r from-red-900 via-red-800 to-red-900"
+            : "bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-900"
+        }`}
+      >
         {/* Animated sparkles */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-4 left-1/4 animate-pulse">
-            <Sparkles className="w-4 h-4 text-purple-300 opacity-60" />
+            <Sparkles
+              className={`w-4 h-4 opacity-60 ${
+                lightTheme ? "text-red-300" : "text-purple-300"
+              }`}
+            />
           </div>
           <div className="absolute top-6 right-1/3 animate-pulse delay-300">
-            <Sparkles className="w-3 h-3 text-indigo-300 opacity-50" />
+            <Sparkles
+              className={`w-3 h-3 opacity-50 ${
+                lightTheme ? "text-red-200" : "text-indigo-300"
+              }`}
+            />
           </div>
           <div className="absolute top-2 right-1/4 animate-pulse delay-700">
-            <Sparkles className="w-2 h-2 text-purple-200 opacity-40" />
+            <Sparkles
+              className={`w-2 h-2 opacity-40 ${
+                lightTheme ? "text-red-100" : "text-purple-200"
+              }`}
+            />
           </div>
         </div>
 
@@ -61,7 +97,11 @@ export default function PromotionalBanner() {
                 <span className="inline-block transform hover:scale-105 transition-transform duration-200 cursor-default mx-2">
                   При покупка на над{" "}
                 </span>
-                <span className="inline-block font-bold text-purple-200 transform hover:scale-110 transition-all duration-200 hover:text-white cursor-default mx-3">
+                <span
+                  className={`inline-block font-bold transform hover:scale-110 transition-all duration-200 hover:text-white cursor-default mx-3 ${
+                    lightTheme ? "text-red-200" : "text-purple-200"
+                  }`}
+                >
                   150 лева
                 </span>
                 <span className="inline-block transform hover:scale-105 transition-transform duration-200 cursor-default mx-2">
@@ -90,7 +130,13 @@ export default function PromotionalBanner() {
         </div>
 
         {/* Bottom border glow effect */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent animate-pulse"></div>
+        <div
+          className={`absolute bottom-0 left-0 right-0 h-px animate-pulse ${
+            lightTheme
+              ? "bg-gradient-to-r from-transparent via-red-400 to-transparent"
+              : "bg-gradient-to-r from-transparent via-purple-400 to-transparent"
+          }`}
+        ></div>
       </div>
 
       {/* Custom animations */}

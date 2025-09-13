@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
           `
           id,
           product_id,
+          size,
           quantity,
           created_at,
           products (
@@ -135,6 +136,7 @@ export async function POST(request: NextRequest) {
         .select("id, quantity")
         .eq("user_id", user.id)
         .eq("product_id", validatedData.product_id)
+        .eq("size", validatedData.size)
         .single();
 
       if (checkError && checkError.code !== "PGRST116") {
@@ -172,6 +174,7 @@ export async function POST(request: NextRequest) {
           .insert({
             user_id: user.id,
             product_id: validatedData.product_id,
+            size: validatedData.size,
             quantity: validatedData.quantity,
           })
           .select()
@@ -238,6 +241,34 @@ export async function PUT(request: NextRequest) {
     });
     const data = schema.parse(body);
 
+    // Check stock availability before updating
+    if (data.quantity > 0) {
+      const { data: variant, error: variantError } = await supabase
+        .from("product_variants")
+        .select("stock_quantity")
+        .eq("product_id", data.product_id)
+        .eq("size", data.size)
+        .single();
+
+      if (variantError || !variant) {
+        return NextResponse.json(
+          { error: "Product variant not found" },
+          { status: 404 }
+        );
+      }
+
+      if (variant.stock_quantity < data.quantity) {
+        return NextResponse.json(
+          { 
+            error: "Insufficient stock", 
+            availableStock: variant.stock_quantity,
+            requestedQuantity: data.quantity
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const user = await getUserFromRequest(request);
 
     if (user) {
@@ -247,6 +278,7 @@ export async function PUT(request: NextRequest) {
         .select("id")
         .eq("user_id", user.id)
         .eq("product_id", data.product_id)
+        .eq("size", data.size)
         .single();
 
       if (checkError) {
@@ -328,6 +360,7 @@ export async function DELETE(request: NextRequest) {
         .select("id")
         .eq("user_id", user.id)
         .eq("product_id", product_id)
+        .eq("size", size)
         .single();
 
       if (checkError) {

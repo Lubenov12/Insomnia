@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { userRegistrationSchema } from "@/lib/validations";
 import { ZodError } from "zod";
+import {
+  handleApiError,
+  ValidationError,
+  ConflictError,
+  AuthenticationError,
+  DatabaseError,
+} from "@/lib/error-handler";
 
 // POST /api/auth/register - User registration
 export async function POST(request: NextRequest) {

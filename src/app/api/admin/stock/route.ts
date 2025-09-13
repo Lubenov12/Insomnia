@@ -6,7 +6,10 @@ import { z } from "zod";
 const updateStockSchema = z.object({
   product_id: z.string().uuid("Valid product ID is required"),
   size: z.enum(["XS", "S", "M", "L", "XL", "XXL", "3XL"]),
-  stock_quantity: z.number().int().min(0, "Stock quantity must be 0 or positive")
+  stock_quantity: z
+    .number()
+    .int()
+    .min(0, "Stock quantity must be 0 or positive"),
 });
 
 export async function PUT(request: NextRequest) {
@@ -15,10 +18,10 @@ export async function PUT(request: NextRequest) {
     const validatedData = updateStockSchema.parse(body);
 
     // Use the database function to update stock
-    const { data, error } = await supabase.rpc('update_variant_stock', {
+    const { data, error } = await supabase.rpc("update_variant_stock", {
       p_product_id: validatedData.product_id,
       p_size: validatedData.size,
-      p_quantity: validatedData.stock_quantity
+      p_quantity: validatedData.stock_quantity,
     });
 
     if (error) {
@@ -37,13 +40,12 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: "Stock updated successfully"
+      message: "Stock updated successfully",
     });
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.errors },
+        { error: "Validation error", details: error.issues },
         { status: 400 }
       );
     }
@@ -61,7 +63,8 @@ export async function GET() {
   try {
     const { data: products, error } = await supabase
       .from("products")
-      .select(`
+      .select(
+        `
         id,
         name,
         category,
@@ -70,7 +73,8 @@ export async function GET() {
           stock_quantity,
           updated_at
         )
-      `)
+      `
+      )
       .order("name");
 
     if (error) {
@@ -82,20 +86,24 @@ export async function GET() {
     }
 
     // Format the response for easier consumption
-    const formattedProducts = products?.map(product => ({
+    const formattedProducts = products?.map((product) => ({
       id: product.id,
       name: product.name,
       category: product.category,
-      variants: product.product_variants?.map((variant: any) => ({
-        size: variant.size,
-        stock_quantity: variant.stock_quantity,
-        updated_at: variant.updated_at
-      })) || [],
-      total_stock: product.product_variants?.reduce((sum: number, variant: any) => sum + variant.stock_quantity, 0) || 0
+      variants:
+        product.product_variants?.map((variant: any) => ({
+          size: variant.size,
+          stock_quantity: variant.stock_quantity,
+          updated_at: variant.updated_at,
+        })) || [],
+      total_stock:
+        product.product_variants?.reduce(
+          (sum: number, variant: any) => sum + variant.stock_quantity,
+          0
+        ) || 0,
     }));
 
     return NextResponse.json({ products: formattedProducts });
-
   } catch (error) {
     console.error("Stock info fetch error:", error);
     return NextResponse.json(
